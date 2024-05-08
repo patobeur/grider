@@ -1,21 +1,18 @@
 import * as THREE from 'three'
 
-// import ammo from 'three/addons/libs/ammo.wasm.js'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 
 // import { ConvexObjectBreaker } from 'three/addons/misc/ConvexObjectBreaker.js';
 // import { ConvexGeometry } from 'three/addons/geometries/ConvexGeometry.js';
 
-
-// import { _dataz } from "/three/js/dataz.js";
+import { Inputs } from "/three/js/Class/Inputs.js";
 import { _cameras } from "/three/js/scene/cameras.js";
-import { _formulas } from "/three/js/fonctions/formulas.js";
 import { _renderer } from "/three/js/scene/renderer.js";
 import { _floors } from "/three/js/scene/floors.js";
+import { _soleil } from "/three/js/scene/soleil.js";
 import { _namer } from "/three/js/fonctions/namer.js";
-import { _soleil } from "/three/js/plustard/soleil.js";
-import { Inputs } from "/three/js/Class/Inputs.js";
+import { _formulas } from "/three/js/fonctions/formulas.js";
 // import { _physics } from "/three/js/scene/physics.js";
 
 
