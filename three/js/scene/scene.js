@@ -13,56 +13,34 @@ import { _floors } from "/three/js/scene/floors.js";
 import { _soleil } from "/three/js/scene/soleil.js";
 import { _namer } from "/three/js/fonctions/namer.js";
 import { _formulas } from "/three/js/fonctions/formulas.js";
-// import { _physics } from "/three/js/scene/physics.js";
+import { _physics } from "/three/js/scene/physics.js";
 
 
 export let _scene = {
 	name: _namer.getName('_scene'),
 	// ------------------------------
-
-	// Ammo.js
-	tmpTransformation: undefined,
-	rigidBody_List: new Array(),
-	physicsUniverse: undefined,
-	clock: undefined,
+	clock: new THREE.Clock(),
 
 	// Three.js
 	scene: new THREE.Scene(),
 	camera: null,
 	renderer: null,
-	clock: new THREE.Clock(),
 	inputs: new Inputs(),
 	init: function (target = false) {
 		if (target != false) this.targetDiv = document.getElementById(target);
 
 
-		this._initPhysicsWorld()
+		_physics._initPhysicsWorld()
 		this._initGraphicsWorld()
 
 		this.inputs.init()
-		// this.addACube()
 
-		// base
-		this.createCube(new THREE.Vector3(40, .5, 40), new THREE.Vector3(0, .25, 0), 0, 0xffffff, null);
-
-		// falling cubes
-		for (let index = 1; index < 101; index++) {
-			let x = 0
-			let y = 20 + index
-			let z = 0
-			let mass = 0.1
-			let pos = new THREE.Vector3(x, y, z)
-			let scales = new THREE.Vector3(1, 1, 1)
-			let color = Math.random() * 0xffffff
-			this.createCube(scales, pos, mass, color, null);
-		}
 
 
 
 	},
-	actions: function (t) {
-		let deltaTime = this.clock.getDelta();
-		this.updatePhysicsUniverse(deltaTime);
+	actions: function (deltaTime) {
+		_physics.updatePhysicsWorld(deltaTime);
 		_soleil.animate()
 		_renderer.renderer.render(_scene.scene, _scene.camera)
 	},
@@ -88,17 +66,39 @@ export let _scene = {
 			loader: () => {
 				this.loader = new GLTFLoader()
 			},
-			// addCube: () => {
-			// 	// Cube
-			// 	const geometry = new THREE.BoxGeometry(1, 1, 1)
-			// 	const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 })
-			// 	this.cube = new THREE.Mesh(geometry, material)
-			// 	this.cube.position.y = .5
-			// 	this.cube.name = 'cube'
-			// 	this.cube.castShadow = true;
-			// 	this.cube.receiveShadow = true;
-			// 	this.scene.add(this.cube)
-			// },
+			addCube: () => {
+				// 	// Cube
+				// 	const geometry = new THREE.BoxGeometry(1, 1, 1)
+				// 	const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 })
+				// 	this.cube = new THREE.Mesh(geometry, material)
+				// 	this.cube.position.y = .5
+				// 	this.cube.name = 'cube'
+				// 	this.cube.castShadow = true;
+				// 	this.cube.receiveShadow = true;
+				// 	this.scene.add(this.cube)
+
+				let floorCube = _physics.createCube(new THREE.Vector3(40, .5, 40), new THREE.Vector3(0, .25, 0), 0, 0xffffff, null);
+				this.scene.add(floorCube)
+
+				let frontCube = _physics.createCube(new THREE.Vector3(40, 1, .5), new THREE.Vector3(0, 1, -19.75), 0, 0xffffff, null);
+				let backCube = _physics.createCube(new THREE.Vector3(40, 1, .5), new THREE.Vector3(0, 1, 19.75), 0, 0xffffff, null);
+				let leftCube = _physics.createCube(new THREE.Vector3(.5, 1, 39), new THREE.Vector3(19.75, 1, 0), 0, 0xffffff, null);
+				let rightCube = _physics.createCube(new THREE.Vector3(.5, 1, 39), new THREE.Vector3(-19.75, 1, 0), 0, 0xffffff, null);
+				this.scene.add(frontCube, backCube, leftCube, rightCube)
+
+				// falling cubes
+				for (let index = 1; index < 1001; index++) {
+					let x = 0
+					let y = 20 + index
+					let z = 0
+					let mass = 0.1
+					let pos = new THREE.Vector3(x, y, z)
+					let scales = new THREE.Vector3(1, 1, 1)
+					let color = Math.random() * 0xffffff
+					let newcube = _physics.createCube(scales, pos, mass, color, null);
+					this.scene.add(newcube)
+				}
+			},
 			floor: () => {
 				// _floors.init(this.scene)
 			},
@@ -135,111 +135,6 @@ export let _scene = {
 			}
 		}
 
-	},
-	addACube: function () {
-		const geometry = new THREE.BoxGeometry(1, 1, 1)
-		// const material = new THREE.MeshBasicMaterial({ color: color })
-		const material = new THREE.MeshPhongMaterial({ color: 0xFF0000 })
-		let cube = new THREE.Mesh(geometry, material)
-		cube.position.y = .5
-		cube.name = 'cube'
-		cube.castShadow = true;
-		cube.receiveShadow = true;
-		this.scene.add(cube)
-
-	},
-
-
-
-
-
-
-
-
-
-
-
-
-
-	// ------ Physics World setup ------
-
-	_initPhysicsWorld: function () {
-		this.tmpTransformation = new Ammo.btTransform();
-		var collisionConfiguration = new Ammo.btDefaultCollisionConfiguration();
-		var dispatcher = new Ammo.btCollisionDispatcher(collisionConfiguration);
-		var overlappingPairCache = new Ammo.btDbvtBroadphase();
-		var solver = new Ammo.btSequentialImpulseConstraintSolver();
-
-		this.physicsUniverse = new Ammo.btDiscreteDynamicsWorld(dispatcher, overlappingPairCache, solver, collisionConfiguration);
-		this.physicsUniverse.setGravity(new Ammo.btVector3(0, -75, 0));
-	},
-	updatePhysicsUniverse: function (deltaTime) {
-
-		this.physicsUniverse.stepSimulation(deltaTime, 10);
-		for (let i = 0; i < this.rigidBody_List.length; i++) {
-
-			let Graphics_Obj = this.rigidBody_List[i];
-			let Physics_Obj = Graphics_Obj.userData.physicsBody;
-
-			let motionState = Physics_Obj.getMotionState();
-
-			if (motionState) {
-
-				motionState.getWorldTransform(this.tmpTransformation);
-				let new_pos = this.tmpTransformation.getOrigin();
-				let new_qua = this.tmpTransformation.getRotation();
-				Graphics_Obj.position.set(new_pos.x(), new_pos.y(), new_pos.z());
-				Graphics_Obj.quaternion.set(new_qua.x(), new_qua.y(), new_qua.z(), new_qua.w());
-			}
-		}
-	},
-	createCube: function (scale, position, mass, color, rotation_q) {
-
-		const geometry = new THREE.BoxGeometry(scale.x, scale.y, scale.z)
-		const material = new THREE.MeshPhongMaterial({ color: color })
-
-		let quaternion = undefined;
-		if (rotation_q == null) {
-			quaternion = { x: 0, y: 0, z: 0, w: 1 };
-		}
-		else {
-			quaternion = rotation_q;
-		}
-
-		// ------ Graphics Universe - Three.JS ------
-		let newcube = new THREE.Mesh(geometry, material);
-		newcube.position.set(position.x, position.y, position.z);
-		newcube.name = 'cube'
-		newcube.castShadow = true;
-		newcube.receiveShadow = true;
-
-
-		// ------ Physics Universe - Ammo.js ------
-		// let transform = this.physics.get_btTransform()
-		let transform = new Ammo.btTransform();
-		transform.setIdentity();
-		transform.setOrigin(new Ammo.btVector3(position.x, position.y, position.z));
-		transform.setRotation(new Ammo.btQuaternion(quaternion.x, quaternion.y, quaternion.z, quaternion.w));
-
-		let defaultMotionState = new Ammo.btDefaultMotionState(transform);
-
-		let structColShape = new Ammo.btBoxShape(new Ammo.btVector3(scale.x * 0.5, scale.y * 0.5, scale.z * 0.5));
-		structColShape.setMargin(0.05);
-
-		let localInertia = new Ammo.btVector3(0, 0, 0);
-		structColShape.calculateLocalInertia(mass, localInertia);
-
-		let RBody_Info = new Ammo.btRigidBodyConstructionInfo(mass, defaultMotionState, structColShape, localInertia);
-		let RBody = new Ammo.btRigidBody(RBody_Info);
-
-		this.physicsUniverse.addRigidBody(RBody);
-
-		newcube.userData.physicsBody = RBody;
-
-		this.rigidBody_List.push(newcube);
-
-		_scene.scene.add(newcube)
-	},
-
+	}
 };
 
