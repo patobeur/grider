@@ -1,0 +1,23 @@
+{
+  "name": "grider",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "dependencies": {
+    "three": "^0.164.1"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/patobeur/grider.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/patobeur/grider/issues"
+  },
+  "homepage": "https://github.com/patobeur/grider#readme"
+}
