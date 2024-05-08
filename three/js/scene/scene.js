@@ -35,8 +35,7 @@ export let _scene = {
 	renderer: null,
 	clock: new THREE.Clock(),
 	inputs: new Inputs(),
-	init: function (Ammo, target = false) {
-		this.ammo = Ammo
+	init: function (target = false) {
 		if (target != false) this.targetDiv = document.getElementById(target);
 
 
@@ -168,8 +167,7 @@ export let _scene = {
 	// ------ Physics World setup ------
 
 	_initPhysicsWorld: function () {
-		this.tmpTransformation = new this.ammo.btTransform();
-
+		this.tmpTransformation = new Ammo.btTransform();
 		var collisionConfiguration = new Ammo.btDefaultCollisionConfiguration();
 		var dispatcher = new Ammo.btCollisionDispatcher(collisionConfiguration);
 		var overlappingPairCache = new Ammo.btDbvtBroadphase();
@@ -221,21 +219,21 @@ export let _scene = {
 
 		// ------ Physics Universe - Ammo.js ------
 		// let transform = this.physics.get_btTransform()
-		let transform = new this.ammo.btTransform();
+		let transform = new Ammo.btTransform();
 		transform.setIdentity();
-		transform.setOrigin(new this.ammo.btVector3(position.x, position.y, position.z));
-		transform.setRotation(new this.ammo.btQuaternion(quaternion.x, quaternion.y, quaternion.z, quaternion.w));
+		transform.setOrigin(new Ammo.btVector3(position.x, position.y, position.z));
+		transform.setRotation(new Ammo.btQuaternion(quaternion.x, quaternion.y, quaternion.z, quaternion.w));
 
-		let defaultMotionState = new this.ammo.btDefaultMotionState(transform);
+		let defaultMotionState = new Ammo.btDefaultMotionState(transform);
 
-		let structColShape = new this.ammo.btBoxShape(new this.ammo.btVector3(scale.x * 0.5, scale.y * 0.5, scale.z * 0.5));
+		let structColShape = new Ammo.btBoxShape(new Ammo.btVector3(scale.x * 0.5, scale.y * 0.5, scale.z * 0.5));
 		structColShape.setMargin(0.05);
 
-		let localInertia = new this.ammo.btVector3(0, 0, 0);
+		let localInertia = new Ammo.btVector3(0, 0, 0);
 		structColShape.calculateLocalInertia(mass, localInertia);
 
-		let RBody_Info = new this.ammo.btRigidBodyConstructionInfo(mass, defaultMotionState, structColShape, localInertia);
-		let RBody = new this.ammo.btRigidBody(RBody_Info);
+		let RBody_Info = new Ammo.btRigidBodyConstructionInfo(mass, defaultMotionState, structColShape, localInertia);
+		let RBody = new Ammo.btRigidBody(RBody_Info);
 
 		this.physicsUniverse.addRigidBody(RBody);
 
