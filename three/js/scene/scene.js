@@ -10,6 +10,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 
 // import { _dataz } from "/three/js/dataz.js";
 import { _cameras } from "/three/js/scene/cameras.js";
+import { _formulas } from "/three/js/fonctions/formulas.js";
 import { _renderer } from "/three/js/scene/renderer.js";
 import { _floors } from "/three/js/scene/floors.js";
 import { _namer } from "/three/js/fonctions/namer.js";
@@ -49,15 +50,16 @@ export let _scene = {
 		this.createCube(new THREE.Vector3(40, .5, 40), new THREE.Vector3(0, .25, 0), 0, 0xffffff, null);
 
 		// falling cubes
-		this.createCube(new THREE.Vector3(1, 1, 1), new THREE.Vector3(0, 20, -5), 1, Math.random() * 0xffffff, null);
-		this.createCube(new THREE.Vector3(1, 1, 1), new THREE.Vector3(-10, 20, -5), 1, Math.random() * 0xffffff, null);
-		this.createCube(new THREE.Vector3(1, 1, 1), new THREE.Vector3(-10, 20, 10), 1, Math.random() * 0xffffff, null);
-		this.createCube(new THREE.Vector3(1, 1, 1), new THREE.Vector3(5, 20, 19), 1, Math.random() * 0xffffff, null);
-		this.createCube(new THREE.Vector3(1, 1, 1), new THREE.Vector3(12, 20, 5), 1, Math.random() * 0xffffff, null);
-		this.createCube(new THREE.Vector3(1, 1, 1), new THREE.Vector3(-15, 20, 19), 1, Math.random() * 0xffffff, null);
-		this.createCube(new THREE.Vector3(1, 1, 1), new THREE.Vector3(-17, 20, 19), 1, Math.random() * 0xffffff, null);
-		this.createCube(new THREE.Vector3(1, 1, 1), new THREE.Vector3(-8, 20, 19), 1, Math.random() * 0xffffff, null);
-		this.createCube(new THREE.Vector3(1, 1, 1), new THREE.Vector3(-8, 30, 19), 1, Math.random() * 0xffffff, null);
+		for (let index = 1; index < 101; index++) {
+			let x = 0
+			let y = 20 + index
+			let z = 0
+			let mass = 0.1
+			let pos = new THREE.Vector3(x, y, z)
+			let scales = new THREE.Vector3(1, 1, 1)
+			let color = Math.random() * 0xffffff
+			this.createCube(scales, pos, mass, color, null);
+		}
 
 
 

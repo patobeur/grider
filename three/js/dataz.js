@@ -42,7 +42,7 @@ export let _dataz = {
 	},
 	camerasByName: {
 		main: {
-			position: new THREE.Vector3(0, 80, 100),
+			position: new THREE.Vector3(0, 10, 35),
 			fov: 40,
 			near: .1,
 			far: 1000,
