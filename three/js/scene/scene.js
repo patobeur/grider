@@ -15,42 +15,58 @@ import { _floors } from "/three/js/scene/floors.js";
 import { _namer } from "/three/js/fonctions/namer.js";
 import { _soleil } from "/three/js/plustard/soleil.js";
 import { Inputs } from "/three/js/Class/Inputs.js";
+// import { _physics } from "/three/js/scene/physics.js";
 
 
 export let _scene = {
 	name: _namer.getName('_scene'),
 	// ------------------------------
+
 	// Ammo.js
 	tmpTransformation: undefined,
 	rigidBody_List: new Array(),
 	physicsUniverse: undefined,
 	clock: undefined,
+
 	// Three.js
 	scene: new THREE.Scene(),
 	camera: null,
 	renderer: null,
-	clock: undefined,
+	clock: new THREE.Clock(),
 	inputs: new Inputs(),
-	actions: function () {
-		// this.cube.rotation.x += 0.01
-		// this.cube.rotation.y += 0.01
-		// this.scene.rotation.y -= 0.01
-		// _soleil.rotation()
-		// let deltaTime = this.clock.getDelta();
-		// this.updatePhysicsUniverse(deltaTime);
-		_soleil.animate()
-		_renderer.renderer.render(_scene.scene, _scene.camera)
-	},
 	init: function (Ammo, target = false) {
+		this.ammo = Ammo
 		if (target != false) this.targetDiv = document.getElementById(target);
 
+
+		this._initPhysicsWorld()
 		this._initGraphicsWorld()
 
 		this.inputs.init()
-		this.addACube()
+		// this.addACube()
 
-		let toto = new Ammo.btDefaultCollisionConfiguration();
-		console.log(toto);
+		// base
+		this.createCube(new THREE.Vector3(40, .5, 40), new THREE.Vector3(0, .25, 0), 0, 0xffffff, null);
+
+		// falling cubes
+		this.createCube(new THREE.Vector3(1, 1, 1), new THREE.Vector3(0, 20, -5), 1, Math.random() * 0xffffff, null);
+		this.createCube(new THREE.Vector3(1, 1, 1), new THREE.Vector3(-10, 20, -5), 1, Math.random() * 0xffffff, null);
+		this.createCube(new THREE.Vector3(1, 1, 1), new THREE.Vector3(-10, 20, 10), 1, Math.random() * 0xffffff, null);
+		this.createCube(new THREE.Vector3(1, 1, 1), new THREE.Vector3(5, 20, 19), 1, Math.random() * 0xffffff, null);
+		this.createCube(new THREE.Vector3(1, 1, 1), new THREE.Vector3(12, 20, 5), 1, Math.random() * 0xffffff, null);
+		this.createCube(new THREE.Vector3(1, 1, 1), new THREE.Vector3(-15, 20, 19), 1, Math.random() * 0xffffff, null);
+		this.createCube(new THREE.Vector3(1, 1, 1), new THREE.Vector3(-17, 20, 19), 1, Math.random() * 0xffffff, null);
+		this.createCube(new THREE.Vector3(1, 1, 1), new THREE.Vector3(-8, 20, 19), 1, Math.random() * 0xffffff, null);
+		this.createCube(new THREE.Vector3(1, 1, 1), new THREE.Vector3(-8, 30, 19), 1, Math.random() * 0xffffff, null);
+
+
+
+	},
+	actions: function (t) {
+		let deltaTime = this.clock.getDelta();
+		this.updatePhysicsUniverse(deltaTime);
+		_soleil.animate()
+		_renderer.renderer.render(_scene.scene, _scene.camera)
 	},
 	_initGraphicsWorld: function () {
 		this._sets = {
@@ -86,7 +102,7 @@ export let _scene = {
 			// 	this.scene.add(this.cube)
 			// },
 			floor: () => {
-				_floors.init(this.scene)
+				// _floors.init(this.scene)
 			},
 			lights: () => {
 				const ambientLight = new THREE.AmbientLight(0xbbbbbb);
@@ -122,10 +138,6 @@ export let _scene = {
 		}
 
 	},
-	actions: function () {
-		_soleil.animate()
-		_renderer.renderer.render(_scene.scene, _scene.camera)
-	},
 	addACube: function () {
 		const geometry = new THREE.BoxGeometry(1, 1, 1)
 		// const material = new THREE.MeshBasicMaterial({ color: color })
@@ -137,6 +149,100 @@ export let _scene = {
 		cube.receiveShadow = true;
 		this.scene.add(cube)
 
-	}
+	},
+
+
+
+
+
+
+
+
+
+
+
+
+
+	// ------ Physics World setup ------
+
+	_initPhysicsWorld: function () {
+		this.tmpTransformation = new this.ammo.btTransform();
+
+		var collisionConfiguration = new Ammo.btDefaultCollisionConfiguration();
+		var dispatcher = new Ammo.btCollisionDispatcher(collisionConfiguration);
+		var overlappingPairCache = new Ammo.btDbvtBroadphase();
+		var solver = new Ammo.btSequentialImpulseConstraintSolver();
+
+		this.physicsUniverse = new Ammo.btDiscreteDynamicsWorld(dispatcher, overlappingPairCache, solver, collisionConfiguration);
+		this.physicsUniverse.setGravity(new Ammo.btVector3(0, -75, 0));
+	},
+	updatePhysicsUniverse: function (deltaTime) {
+
+		this.physicsUniverse.stepSimulation(deltaTime, 10);
+		for (let i = 0; i < this.rigidBody_List.length; i++) {
+
+			let Graphics_Obj = this.rigidBody_List[i];
+			let Physics_Obj = Graphics_Obj.userData.physicsBody;
+
+			let motionState = Physics_Obj.getMotionState();
+
+			if (motionState) {
+
+				motionState.getWorldTransform(this.tmpTransformation);
+				let new_pos = this.tmpTransformation.getOrigin();
+				let new_qua = this.tmpTransformation.getRotation();
+				Graphics_Obj.position.set(new_pos.x(), new_pos.y(), new_pos.z());
+				Graphics_Obj.quaternion.set(new_qua.x(), new_qua.y(), new_qua.z(), new_qua.w());
+			}
+		}
+	},
+	createCube: function (scale, position, mass, color, rotation_q) {
+
+		const geometry = new THREE.BoxGeometry(scale.x, scale.y, scale.z)
+		const material = new THREE.MeshPhongMaterial({ color: color })
+
+		let quaternion = undefined;
+		if (rotation_q == null) {
+			quaternion = { x: 0, y: 0, z: 0, w: 1 };
+		}
+		else {
+			quaternion = rotation_q;
+		}
+
+		// ------ Graphics Universe - Three.JS ------
+		let newcube = new THREE.Mesh(geometry, material);
+		newcube.position.set(position.x, position.y, position.z);
+		newcube.name = 'cube'
+		newcube.castShadow = true;
+		newcube.receiveShadow = true;
+
+
+		// ------ Physics Universe - Ammo.js ------
+		// let transform = this.physics.get_btTransform()
+		let transform = new this.ammo.btTransform();
+		transform.setIdentity();
+		transform.setOrigin(new this.ammo.btVector3(position.x, position.y, position.z));
+		transform.setRotation(new this.ammo.btQuaternion(quaternion.x, quaternion.y, quaternion.z, quaternion.w));
+
+		let defaultMotionState = new this.ammo.btDefaultMotionState(transform);
+
+		let structColShape = new this.ammo.btBoxShape(new this.ammo.btVector3(scale.x * 0.5, scale.y * 0.5, scale.z * 0.5));
+		structColShape.setMargin(0.05);
+
+		let localInertia = new this.ammo.btVector3(0, 0, 0);
+		structColShape.calculateLocalInertia(mass, localInertia);
+
+		let RBody_Info = new this.ammo.btRigidBodyConstructionInfo(mass, defaultMotionState, structColShape, localInertia);
+		let RBody = new this.ammo.btRigidBody(RBody_Info);
+
+		this.physicsUniverse.addRigidBody(RBody);
+
+		newcube.userData.physicsBody = RBody;
+
+		this.rigidBody_List.push(newcube);
+
+		_scene.scene.add(newcube)
+	},
+
 };
 

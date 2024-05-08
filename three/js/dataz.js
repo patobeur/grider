@@ -12,7 +12,7 @@ export let _dataz = {
 			color: 0x5050FF,
 			power: 3,
 			radius: 25,
-			rotationSpeed: 0.0001,
+			rotationSpeed: 0.01,
 			position: new THREE.Vector3(0, 0, 0),
 			size: { x: .5, y: .5, z: .5 },
 			mat: {
@@ -42,7 +42,7 @@ export let _dataz = {
 	},
 	camerasByName: {
 		main: {
-			position: new THREE.Vector3(0, 7, 10),
+			position: new THREE.Vector3(0, 80, 100),
 			fov: 40,
 			near: .1,
 			far: 1000,

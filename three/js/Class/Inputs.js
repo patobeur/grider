@@ -107,7 +107,7 @@ export class Inputs {
 	sleft = false;
 	sright = false;
 	constructor() {
-		// this.conslog = GameConfig.conslog
+		this.conslog = false
 	}
 	init() {
 		this._setupDeviceControls();
@@ -237,7 +237,7 @@ export class Inputs {
 		if (this.conslog) console.log('EVENT', event);
 		if (this.conslog) console.log('EVENT', event.key, event.charCode, event.keyCode);
 
-		console.log(String.fromCharCode(event.keyCode))
+		// console.log(String.fromCharCode(event.keyCode))
 	}
 	_handleKeyUp(event) {
 		if (this.KEY_MAP_OFF[event.key]) this.KEY_MAP_OFF[event.key]();

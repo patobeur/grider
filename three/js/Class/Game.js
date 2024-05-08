@@ -6,6 +6,7 @@ export class Game {
 	_previousREFRESH = null;
 	namer = _namer.getName('Game');
 	init = function (datas, Ammo) {
+
 		// this.name = _namer.getName('Game');
 		let { callBackFunction } = datas
 		this.callBackFunction = callBackFunction;
@@ -36,6 +37,6 @@ export class Game {
 	};
 	_STEP = (timeElapsed) => {
 		timeElapsed = timeElapsed * 0.001;
-		_scene.actions()
+		_scene.actions(timeElapsed)
 	};
 }
