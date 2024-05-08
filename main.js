@@ -1,2 +1,7 @@
 import { _core } from "/three/js/core.js";
-_core.init()
+
+Ammo().then(initThreeJS);
+
+function initThreeJS(Ammo) {
+    _core.init(Ammo);
+}

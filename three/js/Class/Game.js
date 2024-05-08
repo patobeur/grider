@@ -5,7 +5,7 @@ import { _namer } from "/three/js/fonctions/namer.js";
 export class Game {
 	_previousREFRESH = null;
 	namer = _namer.getName('Game');
-	init = function (datas) {
+	init = function (datas, Ammo) {
 		// this.name = _namer.getName('Game');
 		let { callBackFunction } = datas
 		this.callBackFunction = callBackFunction;
@@ -15,7 +15,7 @@ export class Game {
 		this.stats.domElement.style.top = '0px';
 		document.body.appendChild(this.stats.domElement);
 
-		_scene.init();
+		_scene.init(Ammo);
 
 		this._START();
 	};

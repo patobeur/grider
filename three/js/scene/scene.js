@@ -41,13 +41,16 @@ export let _scene = {
 		_soleil.animate()
 		_renderer.renderer.render(_scene.scene, _scene.camera)
 	},
-	init: function (target = false) {
+	init: function (Ammo, target = false) {
 		if (target != false) this.targetDiv = document.getElementById(target);
 
 		this._initGraphicsWorld()
 
 		this.inputs.init()
 		this.addACube()
+
+		let toto = new Ammo.btDefaultCollisionConfiguration();
+		console.log(toto);
 	},
 	_initGraphicsWorld: function () {
 		this._sets = {
