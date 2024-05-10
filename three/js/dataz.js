@@ -9,7 +9,7 @@ export let _dataz = {
 	suns: {
 		main: {
 			name: 'soleil',
-			color: 0x5050FF,
+			color: 0xFFFFFF,
 			power: 3,
 			radius: 25,
 			rotationSpeed: 0.01,
@@ -28,16 +28,16 @@ export let _dataz = {
 			floorSizes: {
 				x: 101,
 				y: 101,
-				z: 0.1
+				z: 0.05
 			},
 			helper: {
 				color: 0x000000,
-				colorGrid: 0x000000,
-				// colorGrid: 0x33ff33,
+				// colorGrid: 0x000000,
+				colorGrid: 0x33ff33,
 			},
-			castShadow: true,
+			castShadow: false,
 			receiveShadow: true,
-			color: 0xEAEAEA,
+			color: 0x000000,
 		}
 	},
 	camerasByName: {
