@@ -7,24 +7,24 @@ export let _soleil = {
 	sunGroupe: null,
 	config: _dataz.suns.main,
 	init: function () {
-		this.config.position.y = this.config.radius
-		this.config.position.x = this.config.radius
-		this.config.position.z = this.config.radius
+		// this.config.position = new THREE.Vector3(
+		// 	0,
+		// 	15,
+		// 	0
+		// )
+		// this.config.position.x = 0//this.config.radius
+		// this.config.position.y = 15//this.config.radius
+		// this.config.position.z = 0//this.config.radius
 		this.floorSize = _dataz.floorsByName.main.floorSizes
 		this.add();
 	},
 	add: function () {
-		this.config.position = new THREE.Vector3(
-			this.floorSize.x / 2,
-			this.floorSize.y / 2,
-			this.floorSize.x / 2
-		)
 		this.groupe = new THREE.Group()
 		this.groupe.name = 'grp_sun'
 		this.groupe.position.set(
-			0,//this.config.position.x - (this.config.size.x / 2),
-			this.config.position.y,// - (this.config.size.y / 2),
-			0,//this.config.position.z - (this.config.size.x / 2),
+			this.config.position.x,
+			this.config.position.y,
+			this.config.position.z,
 		);
 
 		// -------------------------------------------------
@@ -74,7 +74,7 @@ export let _soleil = {
 		// _scene.scene.add(helper);
 
 		_scene.scene.add(this.groupe);
-
+		this.animate()
 	},
 	rotation(centerV3 = (0, 0, 0)) {
 		var center = new THREE.Vector3(centerV3)
@@ -89,7 +89,7 @@ export let _soleil = {
 			0,// relative.x * Math.sin(this.config.rotationSpeed) + relative.z * Math.cos(this.config.rotationSpeed)
 		);
 		this.groupe.position.x = newPos.x + center.x;
-		// this.groupe.position.y = newPos.y + center.y;
+		this.groupe.position.y = newPos.y + center.y;
 		// this.groupe.position.z = newPos.z + center.z;
 	},
 	// -----------------------------
@@ -111,7 +111,7 @@ export let _soleil = {
 		// Faire tourner la sphère autour du centre (0,0,0) avec un rayon de 10 et un petit angle increment
 		this.rotateAroundPoint(
 			this.groupe,
-			new THREE.Vector3(0, 2, 0),
+			new THREE.Vector3(0, 0, 0),
 			this.config.radius,
 			this.config.rotationSpeed
 		);

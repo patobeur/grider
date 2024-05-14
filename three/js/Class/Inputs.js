@@ -204,6 +204,7 @@ export class Inputs {
 		if (event.ctrlKey === false && event.altKey === false) {
 			// if (this.conslog) console.info(event)
 			this.zooming = event.deltaY > 0 ? 'out' : 'in'
+			if (this.conslog) console.log('zooming:', this.zooming)
 		}
 	}
 	_handleMouseMove(event, target) {

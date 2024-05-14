@@ -5,7 +5,7 @@ export let _physics = {
 	name: _namer.getName('_physics'),
 
 	// Ammo.js
-	gravity: new THREE.Vector3(0, -1, 0),
+	gravity: new THREE.Vector3(0, -9.810, 0),
 	inertia: new THREE.Vector3(0, 0, 0),
 	tmpTransformation: undefined,
 	physicsWorld: undefined,
@@ -26,8 +26,8 @@ export let _physics = {
 
 		this.physicsWorld.stepSimulation(deltaTime, 10);
 		for (let i = 0; i < this.rigidBody_List.length; i++) {
-
 			let Graphics_Obj = this.rigidBody_List[i];
+			if (Graphics_Obj.name === 'toto') console.log('name:', Graphics_Obj.name)
 			let Physics_Obj = Graphics_Obj.userData.physicsBody;
 
 			let motionState = Physics_Obj.getMotionState();
@@ -41,6 +41,27 @@ export let _physics = {
 				Graphics_Obj.quaternion.set(new_qua.x(), new_qua.y(), new_qua.z(), new_qua.w());
 			}
 		}
+	},
+	get_geometry: function (shape) {
+		let geo = undefined
+		switch (shape) {
+			case 'Box':
+				geo = new THREE.BoxGeometry(1, 1, 1)
+				break;
+			case 'Sphere':
+				geo = new THREE.SphereGeometry(0.5, 12, 8)
+				break;
+			case 'Dodecahedron':
+				geo = new THREE.DodecahedronGeometry(0.5)
+				break;
+			case 'Cylinder':
+				geo = new THREE.CylinderGeometry(0.5, 0.5, 1, 1)
+				break;
+			default:
+				geo = new THREE.BoxGeometry(1, 1, 1)
+				break;
+		}
+		return geo
 	},
 	// SHAPE > BOX
 	MeshesAndShapes: {
@@ -60,6 +81,7 @@ export let _physics = {
 			let newMesh2 = new THREE.Mesh(geometry2, material2);
 			newMesh2.castShadow = true;
 			newMesh2.receiveShadow = true;
+
 			box.add(newMesh2)
 			newMesh2.position.y = scale.y / 2;
 
@@ -71,9 +93,48 @@ export let _physics = {
 			structColShape.calculateLocalInertia(mass, localInertia);
 			return structColShape
 		},
+		get_aSphere: (scale, position, mass, color, rotation_q) => {
+			// ------ Graphics World - Three.JS ------
+			const geometry = new THREE.SphereGeometry(scale.x, scale.y, scale.z);
+			// const material = new THREE.MeshPhongMaterial({ color: color })
+			const material = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+			let sphere = new THREE.Mesh(geometry, material);
+			sphere.position.set(position.x, position.y, position.z);
+			sphere.rotateY(Math.Pi / 4);
+			sphere.castShadow = true;
+			sphere.receiveShadow = true;
+
+			const geometry2 = new THREE.BoxGeometry(.2, .2, .2)
+			const material2 = new THREE.MeshPhongMaterial({ color: 0x000000 })
+			let newMesh2 = new THREE.Mesh(geometry2, material2);
+			newMesh2.castShadow = true;
+			newMesh2.receiveShadow = true;
+			sphere.add(newMesh2)
+			newMesh2.position.y = scale.y / 2;
+
+			return sphere
+		},
+		get_aSphereShape: function (ballRadius, position, mass, color, rotation_q, localInertia) {
+
+
+			// const ballShape = new Ammo.btSphereShape(ballRadius);
+			// ballShape.setMargin(0.5);
+			// pos.set( - 3, 2, 0 );
+			// quat.set( 0, 0, 0, 1 );
+
+			// createRigidBody( ball, ballShape, ballMass, position, rotation_q );
+
+			// ball.userData.physicsBody.setFriction( 0.5 );
+
+
+			let structColShape = new Ammo.btSphereShape(new Ammo.btVector3(ballRadius.x * 0.5, ballRadius.y * 0.5, ballRadius.z * 0.5));
+			structColShape.setMargin(0.05);
+			structColShape.calculateLocalInertia(mass, localInertia);
+			return structColShape
+		},
 	},
 	// communs
-	_localInertia: function (rotation_q) {
+	_localInertia: function () {
 		return new Ammo.btVector3(this.inertia.x, this.inertia.y, this.inertia.z);
 	},
 	_transform: function (position, quaternion) {
@@ -122,8 +183,11 @@ export let _physics = {
 			let RBody_Info = new Ammo.btRigidBodyConstructionInfo(mass, defaultMotionState, structColShape, localInertia);
 			let RBody = new Ammo.btRigidBody(RBody_Info);
 
+			// RBody.setFriction(0.01);
+
 			this.physicsWorld.addRigidBody(RBody);
 			newMesh.userData.physicsBody = RBody;
+			newMesh.userData.collided = false;
 
 			this.rigidBody_List.push(newMesh);
 			return newMesh

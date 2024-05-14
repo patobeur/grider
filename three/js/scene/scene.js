@@ -1,6 +1,5 @@
 import * as THREE from 'three'
 
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 
 // import { ConvexObjectBreaker } from 'three/addons/misc/ConvexObjectBreaker.js';
@@ -15,6 +14,8 @@ import { _vr } from "/three/js/fonctions/vr.js";
 import { _namer } from "/three/js/fonctions/namer.js";
 import { _formulas } from "/three/js/fonctions/formulas.js";
 import { _physics } from "/three/js/physics/physics.js";
+import { _player } from "/three/js/fonctions/player.js";
+// import { _orbControls } from "/three/js/fonctions/OrbControls.js";
 
 
 export let _scene = {
@@ -34,9 +35,10 @@ export let _scene = {
 		this.inputs.init()
 	},
 	actions: function (deltaTime) {
+		_player.animate(deltaTime)
 		_physics.updatePhysicsWorld(deltaTime);
 		_soleil.animate()
-		this.OrbControls.update();
+		// _orbControls.update();
 		_renderer.renderer.render(_scene.scene, _scene.camera)
 	},
 	_initGraphicsWorld: function () {
@@ -50,22 +52,26 @@ export let _scene = {
 
 				_renderer.renderer.render(this.scene, this.camera);
 
-				this.OrbControls = new OrbitControls(this.camera, _renderer.renderer.domElement)
-				this.OrbControls.enablePan = false;
-				// this.OrbControls.enableRotate = false;
-				this.OrbControls.maxPolarAngle = Math.PI / 2;
-				this.OrbControls.minDistance = 2;
-				this.OrbControls.maxDistance = this.camera.position.z * 2;
+				// _orbControls.init()
+				// this.OrbControls = new OrbitControls(this.camera, _renderer.renderer.domElement)
+				// this.OrbControls.enablePan = false;
+				// // this.OrbControls.enableRotate = false;
+				// this.OrbControls.maxPolarAngle = Math.PI / 2;
+				// this.OrbControls.minDistance = 2;
+				// this.OrbControls.maxDistance = this.camera.position.z * 2;
 
-				// plus de vitesse ou de smooth
-				this.OrbControls.enableDamping = true;
-				this.OrbControls.dampingFactor = 0.09;
+				// // plus de vitesse ou de smooth
+				// this.OrbControls.enableDamping = true;
+				// this.OrbControls.dampingFactor = 0.09;
+
+				// this.OrbControls.update();
 
 				this.loader = new GLTFLoader()
 			},
 			addCube: () => {
 
-				let floorCube = _physics.createMesh(new THREE.Vector3(40, .5, 40), new THREE.Vector3(0, -.25, 0), 0, 0xffffff, null, 'Box');
+				let floorCube = _physics.createMesh(new THREE.Vector3(40, .5, 40), new THREE.Vector3(0, -.25, 0), 0, 0xff00ff, null, 'Box');
+
 				this.scene.add(floorCube)
 
 
@@ -79,6 +85,7 @@ export let _scene = {
 				let leftCube = _physics.createMesh(new THREE.Vector3(.5, hauteurdesmurs, 39), new THREE.Vector3(19.75, hauteurdesmurs / 2, 0), 0, 0xffffff, null, 'Box');
 				let rightCube = _physics.createMesh(new THREE.Vector3(.5, hauteurdesmurs, 39), new THREE.Vector3(-19.75, hauteurdesmurs / 2, 0), 0, 0xffffff, null, 'Box');
 				this.scene.add(frontCube, backCube, leftCube, rightCube)
+
 
 
 				let kubes = this.addcubes;
@@ -95,23 +102,26 @@ export let _scene = {
 
 			},
 			vr: () => {
-				_vr.init()
-				_vr.renderCamera();
-				_vr.addVRButton()
+				// _vr.init()
+				// _vr.renderCamera();
+				// _vr.addVRButton()
 				// this.controller = _renderer.renderer.xr.getController(0);
 				// // this.controller.addEventListener('select', onSelect);
 				// this.scene.add(this.controller);
 			},
+			player: () => {
+				_player.init()
+			},
 
 			addEventsListeners: () => {
 				window.addEventListener("resize", () => {
-
 					const newWidth = window.innerWidth;
 					const newHeight = window.innerHeight;
 
 					this.camera.aspect = newWidth / newHeight;
 					this.camera.updateProjectionMatrix();
 					_renderer.renderer.setSize(newWidth, newHeight);
+					_renderer.renderer.render(_scene.scene, _scene.camera)
 				});
 			},
 		};
@@ -131,15 +141,20 @@ export let _scene = {
 		color: Math.random() * 0xffffff,
 		// color: this.getRaggaeColors(),
 		init: function () {
+
+			// let sphere = _physics.createMesh({ x: 1, y: 15, z: 15 }, { x: 0, y: 10, z: 0 }, this.mass, this.color, null, 'Sphere')
+			// _scene.scene.add(sphere)
+
+			console.log('Creating ' + this.max + ' cubes')
 			this.setInterval = setInterval(() => { this.add() }, 100);
 		},
 		getRaggaeColors: function () {
 			let rand = _formulas.rand(0, 2)
-			console.log(rand)
+			// console.log(rand)
 			return [0xff0000, 0xffff00, 0x00ff00][rand]
 		},
 		add: function () {
-			console.log('addcubes')
+			// console.log('addcubes')
 			this.color = this.getRaggaeColors()//Math.random() * 0xffffff;
 			this.pos = new THREE.Vector3(
 				_formulas.rand(-15, 15),
@@ -153,7 +168,8 @@ export let _scene = {
 			this.i++
 			if (this.i >= this.max) {
 				clearInterval(this.setInterval)
-				console.log('End cubes')
+				console.log(this.max + ' cubes created')
+				// console.log(Ammo)
 			};
 		},
 	},
