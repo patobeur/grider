@@ -9,12 +9,12 @@ export let _dataz = {
 	suns: {
 		main: {
 			name: 'soleil',
-			color: 0x5050FF,
+			color: 0xFFFFFF,
 			power: 3,
 			radius: 25,
-			rotationSpeed: 0.0001,
-			position: new THREE.Vector3(0, 0, 0),
-			size: { x: .5, y: .5, z: .5 },
+			rotationSpeed: 0.0005,
+			position: new THREE.Vector3(20, 10, 20),
+			size: { x: 1, y: 1, z: 1 },
 			mat: {
 				color: 0xFFFFFF00,
 				emissive: 0xFF00FF,
@@ -28,21 +28,21 @@ export let _dataz = {
 			floorSizes: {
 				x: 101,
 				y: 101,
-				z: 0.1
+				z: 0.05
 			},
 			helper: {
 				color: 0x000000,
-				colorGrid: 0x000000,
-				// colorGrid: 0x33ff33,
+				// colorGrid: 0x000000,
+				colorGrid: 0x33ff33,
 			},
-			castShadow: true,
+			castShadow: false,
 			receiveShadow: true,
-			color: 0xEAEAEA,
+			color: 0x000000,
 		}
 	},
 	camerasByName: {
 		main: {
-			position: new THREE.Vector3(0, 7, 10),
+			position: new THREE.Vector3(0, 2, 10),
 			fov: 40,
 			near: .1,
 			far: 1000,

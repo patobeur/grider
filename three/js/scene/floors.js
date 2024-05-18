@@ -19,8 +19,8 @@ export let _floors = {
 			this.conf.main.floorSizes.z
 		);
 
-		const floorMaterial = new THREE.MeshPhongMaterial({ color: this.conf.main.color });
-		// const floorMaterial = new THREE.MeshBasicMaterial({ color: this.conf.main.color });
+		//const floorMaterial = new THREE.MeshPhongMaterial({ color: this.conf.main.color });
+		const floorMaterial = new THREE.MeshBasicMaterial({ color: this.conf.main.color });
 
 		this.floor = new THREE.Mesh(floorGeometry, floorMaterial);
 
@@ -36,7 +36,7 @@ export let _floors = {
 		this.floor.rotateX(Math.PI / 2)
 		this.scene.add(this.floor);
 
-		this.floorGridHelper()
+		// this.floorGridHelper()
 	},
 
 	floorGridHelper: function () {

@@ -107,7 +107,7 @@ export class Inputs {
 	sleft = false;
 	sright = false;
 	constructor() {
-		// this.conslog = GameConfig.conslog
+		this.conslog = false
 	}
 	init() {
 		this._setupDeviceControls();
@@ -204,6 +204,7 @@ export class Inputs {
 		if (event.ctrlKey === false && event.altKey === false) {
 			// if (this.conslog) console.info(event)
 			this.zooming = event.deltaY > 0 ? 'out' : 'in'
+			if (this.conslog) console.log('zooming:', this.zooming)
 		}
 	}
 	_handleMouseMove(event, target) {
@@ -237,7 +238,7 @@ export class Inputs {
 		if (this.conslog) console.log('EVENT', event);
 		if (this.conslog) console.log('EVENT', event.key, event.charCode, event.keyCode);
 
-		console.log(String.fromCharCode(event.keyCode))
+		// console.log(String.fromCharCode(event.keyCode))
 	}
 	_handleKeyUp(event) {
 		if (this.KEY_MAP_OFF[event.key]) this.KEY_MAP_OFF[event.key]();
