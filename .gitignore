@@ -1,2 +1,4 @@
 imc3d.code-workspace
 node_modules/
+trash/
+test.ts

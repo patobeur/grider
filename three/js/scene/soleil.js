@@ -19,9 +19,9 @@ export let _soleil = {
 		this.add();
 	},
 	add: function () {
-		this.groupe = new THREE.Group()
-		this.groupe.name = 'grp_sun'
-		this.groupe.position.set(
+		this.sunGroupe = new THREE.Group()
+		this.sunGroupe.name = 'grp_sun'
+		this.sunGroupe.position.set(
 			this.config.position.x,
 			this.config.position.y,
 			this.config.position.z,
@@ -34,7 +34,7 @@ export let _soleil = {
 		const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
 		sphere.castShadow = false;
 		sphere.receiveShadow = false;
-		this.groupe.add(sphere);
+		this.sunGroupe.add(sphere);
 
 		// une autre sphere pour le soleil
 		const soleilGeometry = new THREE.SphereGeometry(this.config.size.x * .6, 16, 16);
@@ -42,7 +42,7 @@ export let _soleil = {
 		const soleilAvatar = new THREE.Mesh(soleilGeometry, soleilMaterial);
 		soleilAvatar.castShadow = false;
 		soleilAvatar.receiveShadow = false;
-		this.groupe.add(soleilAvatar);
+		this.sunGroupe.add(soleilAvatar);
 
 		// -------------------------------------------------
 		// le vrai soleil
@@ -64,7 +64,7 @@ export let _soleil = {
 		this.sun.shadow.camera.bottom = -d;
 
 		// this.sun.direction = { x: 0, y: 0, z: 0 }
-		this.groupe.add(this.sun);
+		this.sunGroupe.add(this.sun);
 
 		this.sun.castShadow = true;
 		this.sun.receiveShadow = false;
@@ -73,24 +73,24 @@ export let _soleil = {
 		// const helper = new THREE.CameraHelper(this.sun.shadow.camera);
 		// _scene.scene.add(helper);
 
-		_scene.scene.add(this.groupe);
+		_scene.scene.add(this.sunGroupe);
 		this.animate()
 	},
 	rotation(centerV3 = (0, 0, 0)) {
 		var center = new THREE.Vector3(centerV3)
 		var relative = new THREE.Vector3(
-			this.groupe.position.x - center.x,
-			this.groupe.position.y - center.y,
-			this.groupe.position.z - center.z
+			this.sunGroupe.position.x - center.x,
+			this.sunGroupe.position.y - center.y,
+			this.sunGroupe.position.z - center.z
 		);
 		var newPos = new THREE.Vector3(
 			(relative.x * Math.cos(this.config.rotationSpeed)) - (relative.z * Math.sin(this.config.rotationSpeed)),
 			0,//relative.y * Math.sin(this.config.rotationSpeed) - relative.x * Math.cos(this.config.rotationSpeed),
 			0,// relative.x * Math.sin(this.config.rotationSpeed) + relative.z * Math.cos(this.config.rotationSpeed)
 		);
-		this.groupe.position.x = newPos.x + center.x;
-		this.groupe.position.y = newPos.y + center.y;
-		// this.groupe.position.z = newPos.z + center.z;
+		this.sunGroupe.position.x = newPos.x + center.x;
+		this.sunGroupe.position.y = newPos.y + center.y;
+		// this.sunGroupe.position.z = newPos.z + center.z;
 	},
 	// -----------------------------
 	rotateAroundPoint: (obj, center, radius, angleIncrement) => {
@@ -110,7 +110,7 @@ export let _soleil = {
 	animate: function () {
 		// Faire tourner la sphère autour du centre (0,0,0) avec un rayon de 10 et un petit angle increment
 		this.rotateAroundPoint(
-			this.groupe,
+			this.sunGroupe,
 			new THREE.Vector3(0, 0, 0),
 			this.config.radius,
 			this.config.rotationSpeed
