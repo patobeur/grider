@@ -63,6 +63,7 @@
 			import Stats from 'three/addons/libs/stats.module.js';
 
 			import { BoxLineGeometry } from 'three/addons/geometries/BoxLineGeometry.js';
+			import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 			let initWorld = (Ammo) => {
 				const inputVelocity = new THREE.Vector3();
 				const euler = new THREE.Euler();
@@ -84,37 +85,59 @@
 				}
 				let floorManager = {
 					init: function (_scene, _physics, Ammo) { },
-					floors: new Array(),
+					// floors: new Array(),
+					// stairs: new Array(),
+					// boxes: new Array(),
+					// walls: new Array(),
 					add_floors: function () {
 						_dataz.floorsList[0].forEach(element => {
-							let mesh = _physics.createMesh2(element)
+							_dataz.prefabs[element.name].position = element.pos
+							let mesh = _physics.createMesh2(_dataz.prefabs[element.name])
 							_scene.scene.add(mesh)
 						});
-						// _scene.floor1 = _physics.createMesh(new THREE.Vector3(20, .5, 20), new THREE.Vector3(-5, -.25, -5), 0, 0xffffff, null, 'Box');
-						// _scene.floor2 = _physics.createMesh(new THREE.Vector3(5, .5, 5), new THREE.Vector3(10, 3, 10), 0, 0xEAEAEA, null, 'Box');
-						// _scene.floor3 = _physics.createMesh(new THREE.Vector3(5, .5, 5), new THREE.Vector3(5, 10, 5), 0, 0xEAEAEA, null, 'Box');
-						// _scene.floor4 = _physics.createMesh(new THREE.Vector3(5, .5, 5), new THREE.Vector3(0, 15, 0), 0, 0xEAEAEA, null, 'Box');
-						// _scene.scene.add(_scene.floor1)//, _scene.floor2, _scene.floor3, _scene.floor4)
 					},
+					add_stairs: function () {
+						_dataz.stairsList[0].forEach(element => {
+
+							_dataz.prefabs[element.name].position = element.pos
+							let mesh = _physics.createMesh2(_dataz.prefabs[element.name])
+							_scene.scene.add(mesh)
+						});
+					},
+					add_boxes: function () {
+						_dataz.boxesList[0].forEach(element => {
+							_dataz.prefabs[element.name].position = element.pos
+							let mesh = _physics.createMesh2(_dataz.prefabs[element.name])
+							_scene.scene.add(mesh)
+						});
+					},
+					add_walls: function () {
+						_dataz.wallsList[0].forEach(element => {
+							_dataz.prefabs[element.name].position = element.pos
+							let mesh = _physics.createMesh2(_dataz.prefabs[element.name])
+							_scene.scene.add(mesh)
+						});
+					},
+					// _scene.floor1 = _physics.createMesh(new THREE.Vector3(20, .5, 20), new THREE.Vector3(-5, -.25, -5), 0, 0xffffff, null, 'Box');
+					// _scene.floor2 = _physics.createMesh(new THREE.Vector3(5, .5, 5), new THREE.Vector3(10, 3, 10), 0, 0xEAEAEA, null, 'Box');
+					// _scene.floor3 = _physics.createMesh(new THREE.Vector3(5, .5, 5), new THREE.Vector3(5, 10, 5), 0, 0xEAEAEA, null, 'Box');
+					// _scene.floor4 = _physics.createMesh(new THREE.Vector3(5, .5, 5), new THREE.Vector3(0, 15, 0), 0, 0xEAEAEA, null, 'Box');
+					// _scene.scene.add(_scene.floor1)//, _scene.floor2, _scene.floor3, _scene.floor4)
 				}
 
-				let start = function () {
-					console.log('ok')
-					_mouse.init()
-					_menuPanel.init()
-					_physics._init()
-					_scene.init()
-					_pivot.init()
-					_moove.init()
-					_scene._ANIMATE()
-				}
 				//---------------------------------
 				let _dataz = {
 					files: [
 						{ name: 'floor', shapeType: 'cube', path: 'textures/', fileName: 'sol.jpg' },
 						{ name: 'wall', shapeType: 'cube', path: 'textures/', fileName: 'wall_2.jpg' },
-						{ name: 'foot', shapeType: 'cube', path: 'textures/', fileName: 'foot.jpg' },
-						{ name: 'floor1', shapeType: 'cube', path: 'textures/floors/', fileName: '12.jpg' },
+						{ name: 'wall1', shapeType: 'cube', path: 'textures/walls/', fileName: 'level1b.jpg' },
+						{ name: 'wall2', shapeType: 'cube', path: 'textures/walls/', fileName: 'level2.jpg' },
+						{ name: 'wall3', shapeType: 'cube', path: 'textures/walls/', fileName: 'level3.jpg' },
+						{ name: 'foot', shapeType: 'cube', path: 'textures/', fileName: 'foot_2048x1342.jpg' },
+						{ name: 'road1', shapeType: 'cube', path: 'textures/road/', fileName: 'road1.jpg' },
+						{ name: 'crate', shapeType: 'cube', path: 'textures/floors/', fileName: 'crate_color8.png' },
+
+
 					],
 					suns: {
 						main: {
@@ -132,91 +155,100 @@
 							},
 						}
 					},
+					prefabs: {
+						get: (name = "box", pos = false) => {
+							let obj = this[name]
+							if (pos != false) obj.position = pos
+							return obj
+						},
+						floor1: {
+							position: new THREE.Vector3(0, -0.5, 5),
+							mass: 0,
+							color: 0xffffff,
+							rotation_q: { x: 0, y: 0, z: 0, w: 1 },
+							geometry: new THREE.BoxGeometry(40, 1, 10),
+							structColShape: new Ammo.btBoxShape(new Ammo.btVector3(40 * 0.5, 1 * 0.5, 10 * 0.5)),
+							inertia: 0,
+							material: 'road1',
+							friction: 0,// Friction : La friction affecte la résistance des objets lorsqu'ils glissent les uns contre les autres.
+							restitution: 0,
+							linearDamping: 0,// Linear Damping (Amortissement linéaire) : Réduit progressivement la vitesse d'un objet au fil du temps, simulant des effets comme la résistance de l'air.
+							angularDamping: 0// Angular Damping (Amortissement angulaire) : Réduit progressivement la vitesse de rotation d'un objet.
+							// 		castShadow: false,
+							// 		receiveShadow: true,
+							// 		ambient: 0x121212,
+							// 		emissive: 0x121212,
+							// 		emissiveIntensity: 2,
+						},
+						stair: {
+							position: new THREE.Vector3(10.5, 0.5, 0),
+							mass: 0,
+							color: 0xffffff,
+							rotation_q: { x: 0, y: 0, z: 0, w: 1 },
+							geometry: new THREE.BoxGeometry(1, 1, 3),
+							structColShape: new Ammo.btBoxShape(new Ammo.btVector3(1 * 0.5, 1 * 0.5, 3 * 0.5)),
+							material: 'crate',
+							inertia: 0,
+							friction: 0,
+							restitution: 0,
+							linearDamping: 0,
+							angularDamping: 0
+
+						},
+						box: {
+							position: new THREE.Vector3(0, 0, 0),
+							mass: 0,
+							color: 0xffffff,
+							rotation_q: { x: 0, y: 0, z: 0, w: 1 },
+							geometry: new THREE.BoxGeometry(1, 1, 1),
+							structColShape: new Ammo.btBoxShape(new Ammo.btVector3(1 * 0.5, 1 * 0.5, 1 * 0.5)),
+							material: 'crate',
+							inertia: 0,
+							friction: 0,
+							restitution: 0,
+							linearDamping: 0,
+							angularDamping: 0
+						},
+						wall1: {
+							position: new THREE.Vector3(0, 0, 0),
+							mass: 0,
+							color: 0xffffff,
+							rotation_q: { x: 0, y: 0, z: 0, w: 1 },
+							geometry: new THREE.BoxGeometry(20, 5, 1),
+							structColShape: new Ammo.btBoxShape(new Ammo.btVector3(20 * 0.5, 5 * 0.5, 1 * 0.5)),
+							material: 'wall1',
+							inertia: 0,
+							friction: 0,
+							restitution: 0,
+							linearDamping: 0,
+							angularDamping: 0
+						}
+					},
 					floorsList: {
 						0: [
-							{
-								position: new THREE.Vector3(0, -0.25, 0),
-								mass: 0,
-								color: 0xffffff,
-								rotation_q: { x: 0, y: 5, z: 0, w: 1 },
-								type: 'Floor',
-								geometry: new THREE.BoxGeometry(20, .5, 3),
-								structColShape: new Ammo.btBoxShape(new Ammo.btVector3(20 * 0.5, .5 * 0.5, 3 * 0.5)),
-								material: 'foot',
-								inertia: 0,
-								categorie: 'Floor',
-								friction: 0,// Friction : La friction affecte la résistance des objets lorsqu'ils glissent les uns contre les autres.
-								restitution: 0,
-								linearDamping: 0,// Linear Damping (Amortissement linéaire) : Réduit progressivement la vitesse d'un objet au fil du temps, simulant des effets comme la résistance de l'air.
-								angularDamping: 0// Angular Damping (Amortissement angulaire) : Réduit progressivement la vitesse de rotation d'un objet.
-								// 		castShadow: false,
-								// 		receiveShadow: true,
-								// 		ambient: 0x121212,
-								// 		emissive: 0x121212,
-								// 		emissiveIntensity: 2,
-							},
-							{
-								position: new THREE.Vector3(0, 3, 0),
-								mass: 0,
-								color: 0xffffff,
-								rotation_q: { x: 0, y: 0, z: 0, w: 1 },
-								type: 'Floor',
-								geometry: new THREE.BoxGeometry(20, .5, 3),
-								structColShape: new Ammo.btBoxShape(new Ammo.btVector3(20 * 0.5, .5 * 0.5, 3 * 0.5)),
-								material: 'foot',
-								inertia: 0,
-								categorie: 'Floor',
-								friction: 0,// Friction : La friction affecte la résistance des objets lorsqu'ils glissent les uns contre les autres.
-								restitution: 0,
-								linearDamping: 0,// Linear Damping (Amortissement linéaire) : Réduit progressivement la vitesse d'un objet au fil du temps, simulant des effets comme la résistance de l'air.
-								angularDamping: 0// Angular Damping (Amortissement angulaire) : Réduit progressivement la vitesse de rotation d'un objet.
-							}
+							{ name: 'floor1', pos: { x: -20, y: 0, z: 2.5 } },
+							{ name: 'floor1', pos: { x: 20, y: 0, z: 2.5 } },
+							{ name: 'floor1', pos: { x: -15, y: 5, z: 2.5 } },
 						]
 					},
-
-					// floorsByName: {
-					// 	main: {
-					// 		name: 'floor',
-					// 		categorie: 'Floor',
-					// 		floorSizes: {
-					// 			x: 101,
-					// 			y: 101,
-					// 			z: 0.1
-					// 		},
-					// 		helper: {
-					// 			color: 0x000000,
-					// 			colorGrid: 0x33ff33,
-					// 		},
-					// 		castShadow: false,
-					// 		receiveShadow: true,
-					// 		color: 0x000000,
-					// 		ambient: 0x121212,
-					// 		emissive: 0x121212,
-					// 		emissiveIntensity: 2,
-					// 	},
-					// 	main2: {
-					// 		name: 'floor',
-					// 		categorie: 'Floor',
-					// 		floorSizes: {
-					// 			x: 10,
-					// 			y: 10,
-					// 			z: 0.1
-					// 		},
-					// 		castShadow: false,
-					// 		receiveShadow: true,
-					// 		color: 0x000000,
-					// 		ambient: 0x121212,
-					// 		emissive: 0x121212,
-					// 		emissiveIntensity: 2,
-					// 	}
-					// },
+					stairsList: {
+						0: [{ name: 'stair', pos: { x: 6.5, y: 1, z: 0 } },
+						{ name: 'stair', pos: { x: 7.5, y: 2, z: 0 } }]
+					},
+					boxesList: {
+						0: [{ name: 'box', pos: { x: 8.5, y: 3, z: -1 } }, { name: 'box', pos: { x: 9.5, y: 4, z: -1 } }]
+					},
+					wallsList: {
+						0: [{ name: 'wall1', pos: { x: -10, y: 2.5, z: -2 } }, { name: 'wall1', pos: { x: 10, y: 2.5, z: -2 } },
+						{ name: 'wall1', pos: { x: -10, y: 7.5, z: -2 } }, { name: 'wall1', pos: { x: 10, y: 7.5, z: -2 } }]
+					},
 					cameras: {
 						main: {
-							position: new THREE.Vector3(0, 1, 5),
+							position: new THREE.Vector3(0, 1, 8),
 							fov: 40,
 							near: .1,
 							far: 1000,
-							idealLookAt: new THREE.Vector3(0, 0, 0),
+							// idealLookAt: new THREE.Vector3(0, 2, 0),
 							name: 'main'
 						},
 						test: {
@@ -277,6 +309,55 @@
 					// get_aleaPos: function () {return {x: this.rand(50, window.innerWidth - 50),y: this.rand(50, window.innerHeight - 50)}}
 
 				};
+				let _gltfsLoader = {
+					i: 0,
+					gltfs: {},
+					callbackFunction: undefined,
+					list: [
+						{ filename: 'BaseCharacter.gltf', name: 'BaseCharacter' },
+						{ filename: 'Elf.gltf', name: 'Elf' },
+					],
+					_loader: function (fichier, onProgress, onError, i, imax) {
+						let loader = new GLTFLoader()
+						loader.load(
+							'gltf/' + fichier.filename,
+							function (gltf) {
+								_gltfsLoader.gltfs[fichier.name] = gltf
+								console.log('Modèle GLTF chargé avec succès.', i, imax);
+								if (imax === i) _gltfsLoader.callbackFunction('fini', i)
+							},
+							function (xhr) {
+								if (onProgress) {
+									onProgress(xhr.loaded / xhr.total * 100);
+								}
+							},
+							function (error) {
+								console.error('Une erreur est survenue lors du chargement du modèle GLTF:', error);
+								if (onError) {
+									onError(error);
+								}
+							}
+						);
+					},
+					init: function (callbackFunction) {
+						this.callbackFunction = callbackFunction
+						this.loader = new GLTFLoader();
+						this.list.forEach(element => {
+							this.i++
+							this._loader(
+								element,
+								(progress) => {
+									console.log(`Chargement : ${progress}%`, element.filename);
+								},
+								(error) => {
+									console.error('Erreur de chargement :', error);
+								},
+								this.i,
+								this.list.length
+							);
+						});
+					}
+				}
 				let _texturesLoader = {
 					textures: {},
 					texturesDivByName: {},
@@ -295,7 +376,6 @@
 					},
 					checkEnd: function () {
 						if (this.counter === this.length) {
-
 							this.callbackFunction('FINITO textureLoader')
 							this.clearModal()
 						}
@@ -357,6 +437,40 @@
 						);
 					},
 				};
+
+				let start3 = () => {
+					_mouse.init()
+					_menuPanel.init()
+					_physics._init()
+					_scene.init()
+					_pivot.init()
+					_moove.init()
+					console.log(_gltfsLoader.gltfs)
+
+					_gltfsLoader.gltfs['BaseCharacter'].scene.position.x = -5
+					_gltfsLoader.gltfs['BaseCharacter'].scene.position.y = .5
+					_gltfsLoader.gltfs['BaseCharacter'].scene.castShadow = true
+					_scene.scene.add(_gltfsLoader.gltfs['BaseCharacter'].scene);
+
+					_gltfsLoader.gltfs['Elf'].scene.position.x = -6
+					_gltfsLoader.gltfs['Elf'].scene.position.y = .5
+					_gltfsLoader.gltfs['Elf'].scene.castShadow = true
+					_scene.scene.add(_gltfsLoader.gltfs['Elf'].scene);
+
+					// _gltfsLoader.gltfs['car'].scene.position.x = -6
+					// _gltfsLoader.gltfs['car'].scene.position.y = .5
+					// _scene.scene.add(_gltfsLoader.gltfs['car'].scene);
+
+					_scene._ANIMATE()
+				}
+				let start2 = function () {
+					start3()
+				}
+				let start0 = () => {
+					console.log('start0 ok')
+					_gltfsLoader.init(start2)
+				}
+
 
 				let _physics = {
 					// Ammo.js
@@ -421,10 +535,30 @@
 						}
 					},
 					createMesh2: function (element) {
-						let { position, sizes, mass, color, rotation_q, type, geometry, structColShape, material, inertia, categorie, friction, restitution, linearDamping, angularDamping } = element
+						let { position,
+							// sizes,
+							mass,
+							color,
+							rotation_q,
+							// type,
+							geometry,
+							structColShape,
+							material,
+							inertia,
+							// categorie,
+							friction,
+							restitution,
+							linearDamping,
+							angularDamping } = element
 
 						let quaternion = (rotation_q == null) ? { x: 0, y: 0, z: 0, w: 1 } : rotation_q;
-						material = new THREE.MeshStandardMaterial({ map: _texturesLoader.textures[material].map });
+
+						if (typeof material != 'undefined') {
+							material = new THREE.MeshStandardMaterial(_texturesLoader.textures[material]);
+						}
+						else {
+							material = new THREE.MeshPhongMaterial({ color: color ?? 0x000000 });
+						}
 
 						structColShape.setMargin(0.05);
 						structColShape.calculateLocalInertia(mass, inertia);
@@ -661,19 +795,19 @@
 					},
 					//---------------------------------
 					add_objets: function () {
-						_scene.bloc1 = _physics.createMesh(new THREE.Vector3(1, 1, 1), new THREE.Vector3(-3, 20, -3), 1, 0xff0000, null, 'Box');
-						_scene.bloc2 = _physics.createMesh(new THREE.Vector3(1, 1, 1), new THREE.Vector3(3, 20, 3), 1, 0x0000ff, null, 'Box');
-						_scene.bloc3 = _physics.createMesh(new THREE.Vector3(1, 1, 1), new THREE.Vector3(3, 20, 3), 1, 0x0000ff, null, 'Box');
+						// _scene.bloc1 = _physics.createMesh(new THREE.Vector3(1, 1, 1), new THREE.Vector3(-3, 20, -3), 1, 0xff0000, null, 'Box');
+						// _scene.bloc2 = _physics.createMesh(new THREE.Vector3(1, 1, 1), new THREE.Vector3(3, 20, 3), 1, 0x0000ff, null, 'Box');
+						// _scene.bloc3 = _physics.createMesh(new THREE.Vector3(1, 1, 1), new THREE.Vector3(3, 20, 3), 1, 0x0000ff, null, 'Box');
 
-						_scene.sphere1 = _physics.createMesh(new THREE.Vector3(1, 1, 1), new THREE.Vector3(2, 20, 2), 1, Math.random() * 0xffffff, null, 'Sphere');
-						_scene.sphere2 = _physics.createMesh(new THREE.Vector3(1, 1, 1), new THREE.Vector3(-2, 20, -2), 1, Math.random() * 0xffffff, null, 'Sphere');
-						_scene.capsule = _physics.createMesh(new THREE.Vector3(1, 1, 1), new THREE.Vector3(-2, 20, -2), 1, Math.random() * 0xffffff, null, 'Capsule');
-						_scene.dodecahedron = _physics.createMesh(new THREE.Vector3(1, 1, 1), new THREE.Vector3(-4, 20, -4), 1, Math.random() * 0xffffff, null, 'Dodecahedron');
-						_scene.cylinder = _physics.createMesh(new THREE.Vector3(1, 1, 1), new THREE.Vector3(3, 20, -1), 1, Math.random() * 0xffffff, null, 'Cylinder');
-						this.scene.add(_scene.bloc1, _scene.bloc2, _scene.bloc3, _scene.sphere1, _scene.sphere2, _scene.capsule, _scene.dodecahedron, _scene.cylinder)
+						// _scene.sphere1 = _physics.createMesh(new THREE.Vector3(1, 1, 1), new THREE.Vector3(2, 20, 2), 1, Math.random() * 0xffffff, null, 'Sphere');
+						// _scene.sphere2 = _physics.createMesh(new THREE.Vector3(1, 1, 1), new THREE.Vector3(-2, 20, -2), 1, Math.random() * 0xffffff, null, 'Sphere');
+						// _scene.capsule = _physics.createMesh(new THREE.Vector3(1, 1, 1), new THREE.Vector3(-2, 20, -2), 1, Math.random() * 0xffffff, null, 'Capsule');
+						// _scene.dodecahedron = _physics.createMesh(new THREE.Vector3(1, 1, 1), new THREE.Vector3(-4, 20, -4), 1, Math.random() * 0xffffff, null, 'Dodecahedron');
+						// _scene.cylinder = _physics.createMesh(new THREE.Vector3(1, 1, 1), new THREE.Vector3(3, 20, -1), 1, Math.random() * 0xffffff, null, 'Cylinder');
+						// this.scene.add(_scene.bloc1, _scene.bloc2, _scene.bloc3, _scene.sphere1, _scene.sphere2, _scene.capsule, _scene.dodecahedron, _scene.cylinder)
 					},
 					add_player: function () {
-						_scene.player = _physics.createMesh(new THREE.Vector3(1, 1, 1), new THREE.Vector3(0, 15, 0), 5, 0xF27438, null, 'Player1');
+						_scene.player = _physics.createMesh(new THREE.Vector3(1, 1, 1), new THREE.Vector3(0, .5, 0), 5, 0xF27438, null, 'Player1');
 
 						_scene.playerEyes = new THREE.Group()
 						const geometry = new THREE.BoxGeometry(.13, .13, .1)
@@ -697,9 +831,12 @@
 						_soleil.init()
 						this.add_lights()
 						floorManager.add_floors()
-						this.add_objets()
-						this.add_player()
+						floorManager.add_stairs()
+						floorManager.add_boxes()
+						floorManager.add_walls()
+						// this.add_objets()
 						this.add_camera()
+						this.add_player()
 						this.add_SceneBackground()
 						{
 							// renderer
@@ -717,8 +854,11 @@
 					_ANIMATE: function () {
 						requestAnimationFrame((time) => {
 							delta = Math.min(clock.getDelta(), fixedTimeStep);
-							// _soleil.animate()
+
+							_soleil.animate()
+
 							_moove.checkMoves()
+
 							_physics.physicsWorld.stepSimulation(delta, 10, fixedTimeStep);  // consistent physics updates
 							_physics._updateRigidBodyList(delta);
 							updateRender();
@@ -776,7 +916,7 @@
 								menuPanel.style.display = "none";
 								document.addEventListener("keydown", this.onDocumentKey, false);
 								document.addEventListener("keyup", this.onDocumentKey, false);
-								_scene.renderer.domElement.addEventListener("mousemove", this.onDocumentMouseMove, false);
+								// _scene.renderer.domElement.addEventListener("mousemove", this.onDocumentMouseMove, false);
 								_scene.renderer.domElement.addEventListener("wheel", this.onDocumentMouseWheel, false);
 							} else {
 								this.pointerLocked = false;
@@ -784,7 +924,7 @@
 								menuPanel.style.display = "block";
 								document.removeEventListener("keydown", this.onDocumentKey, false);
 								document.removeEventListener("keyup", this.onDocumentKey, false);
-								_scene.renderer.domElement.removeEventListener("mousemove", this.onDocumentMouseMove, false);
+								// _scene.renderer.domElement.removeEventListener("mousemove", this.onDocumentMouseMove, false);
 								_scene.renderer.domElement.removeEventListener("wheel", this.onDocumentMouseWheel, false);
 
 								setTimeout(() => {
@@ -896,7 +1036,8 @@
 				document.body.appendChild(stats.dom);
 
 				window.addEventListener("resize", onWindowResize, false);
-				_texturesLoader.init(start)
+
+				_texturesLoader.init(start0)
 			}
 			Ammo().then(initWorld);
 		</script>
