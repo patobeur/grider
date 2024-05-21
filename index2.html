@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+	<head>
+		<title>three.js physics</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+		<style>
+			body {
+				overflow: hidden;
+				margin: 0px;
+			}
+
+			#instructions {
+				color: white;
+				position: absolute;
+				left: 50%;
+				top: 10px;
+				margin-left: -220px;
+				font-family: monospace;
+			}
+
+			#menuPanel {
+				position: absolute;
+				background-color: rgba(255, 255, 255, 0.25);
+				top: 0px;
+				left: 0px;
+				width: 100%;
+				height: 100%;
+			}
+
+			#startButton {
+				height: 50px;
+				width: 200px;
+				margin: -25px -100px;
+				position: relative;
+				top: 50%;
+				left: 50%;
+				font-size: 32px;
+			}
+		</style>
+	</head>
+
+	<body>
+
+		<div id="instructions">
+			Z Q S D to move player<br />Mousemove to rotate<br />Mousewheel to zoom in/out
+		</div>
+		<div id="menuPanel">
+			<button id="startButton">Click to Start</button>
+		</div>
+		<script src="/node_modules/three/examples/jsm/libs/ammo.wasm.js"></script>
+		<script type="importmap">
+		{
+          "imports": {
+            "three": "/node_modules/three/build/three.module.js",
+            "three/addons/": "/node_modules/three/examples/jsm/"
+          }
+        }
+      	</script>
+		<script type="module">
+			import * as THREE from "three";
+			import Stats from 'three/addons/libs/stats.module.js';
+
+			import { BoxLineGeometry } from 'three/addons/geometries/BoxLineGeometry.js';
+			let initWorld = (Ammo) => {
+				const inputVelocity = new THREE.Vector3();
+				const euler = new THREE.Euler();
+				const quaternion = new THREE.Quaternion();
+
+				const clock = new THREE.Clock();
+				const fixedTimeStep = 1 / 60; // 60 Hz which corresponds to about 16.67 milliseconds
+				let delta = 0;
+
+				//---------------------------------
+				let onWindowResize = function () {
+					_scene.camera.aspect = window.innerWidth / window.innerHeight;
+					_scene.camera.updateProjectionMatrix();
+					_scene.renderer.setSize(window.innerWidth, window.innerHeight);
+					updateRender();
+				}
+				let updateRender = function () {
+					_scene.renderer.render(_scene.scene, _scene.camera);
+				}
+				let floorManager = {
+					init: function (_scene, _physics, Ammo) { },
+					floors: new Array(),
+					add_floors: function () {
+						_dataz.floorsList[0].forEach(element => {
+							let mesh = _physics.createMesh2(element)
+							_scene.scene.add(mesh)
+						});
+						// _scene.floor1 = _physics.createMesh(new THREE.Vector3(20, .5, 20), new THREE.Vector3(-5, -.25, -5), 0, 0xffffff, null, 'Box');
+						// _scene.floor2 = _physics.createMesh(new THREE.Vector3(5, .5, 5), new THREE.Vector3(10, 3, 10), 0, 0xEAEAEA, null, 'Box');
+						// _scene.floor3 = _physics.createMesh(new THREE.Vector3(5, .5, 5), new THREE.Vector3(5, 10, 5), 0, 0xEAEAEA, null, 'Box');
+						// _scene.floor4 = _physics.createMesh(new THREE.Vector3(5, .5, 5), new THREE.Vector3(0, 15, 0), 0, 0xEAEAEA, null, 'Box');
+						// _scene.scene.add(_scene.floor1)//, _scene.floor2, _scene.floor3, _scene.floor4)
+					},
+				}
+
+				let start = function () {
+					console.log('ok')
+					_mouse.init()
+					_menuPanel.init()
+					_physics._init()
+					_scene.init()
+					_pivot.init()
+					_moove.init()
+					_scene._ANIMATE()
+				}
+				//---------------------------------
+				let _dataz = {
+					files: [
+						{ name: 'floor', shapeType: 'cube', path: 'textures/', fileName: 'sol.jpg' },
+						{ name: 'wall', shapeType: 'cube', path: 'textures/', fileName: 'wall_2.jpg' },
+						{ name: 'foot', shapeType: 'cube', path: 'textures/', fileName: 'foot.jpg' },
+						{ name: 'floor1', shapeType: 'cube', path: 'textures/floors/', fileName: '12.jpg' },
+					],
+					suns: {
+						main: {
+							name: 'soleil',
+							color: 0xFFFFFF,
+							power: 3,
+							radius: 25,
+							rotationSpeed: 0.0005,
+							position: new THREE.Vector3(0, 0, -20),
+							size: { x: 1, y: 1, z: 1 },
+							mat: {
+								color: 0xFFFF00,
+								emissive: 0xFF00FF,
+								emissiveIntensity: 2,
+							},
+						}
+					},
+					floorsList: {
+						0: [
+							{
+								position: new THREE.Vector3(0, -0.25, 0),
+								mass: 0,
+								color: 0xffffff,
+								rotation_q: { x: 0, y: 5, z: 0, w: 1 },
+								type: 'Floor',
+								geometry: new THREE.BoxGeometry(20, .5, 3),
+								structColShape: new Ammo.btBoxShape(new Ammo.btVector3(20 * 0.5, .5 * 0.5, 3 * 0.5)),
+								material: 'foot',
+								inertia: 0,
+								categorie: 'Floor',
+								friction: 0,// Friction : La friction affecte la résistance des objets lorsqu'ils glissent les uns contre les autres.
+								restitution: 0,
+								linearDamping: 0,// Linear Damping (Amortissement linéaire) : Réduit progressivement la vitesse d'un objet au fil du temps, simulant des effets comme la résistance de l'air.
+								angularDamping: 0// Angular Damping (Amortissement angulaire) : Réduit progressivement la vitesse de rotation d'un objet.
+								// 		castShadow: false,
+								// 		receiveShadow: true,
+								// 		ambient: 0x121212,
+								// 		emissive: 0x121212,
+								// 		emissiveIntensity: 2,
+							},
+							{
+								position: new THREE.Vector3(0, 3, 0),
+								mass: 0,
+								color: 0xffffff,
+								rotation_q: { x: 0, y: 0, z: 0, w: 1 },
+								type: 'Floor',
+								geometry: new THREE.BoxGeometry(20, .5, 3),
+								structColShape: new Ammo.btBoxShape(new Ammo.btVector3(20 * 0.5, .5 * 0.5, 3 * 0.5)),
+								material: 'foot',
+								inertia: 0,
+								categorie: 'Floor',
+								friction: 0,// Friction : La friction affecte la résistance des objets lorsqu'ils glissent les uns contre les autres.
+								restitution: 0,
+								linearDamping: 0,// Linear Damping (Amortissement linéaire) : Réduit progressivement la vitesse d'un objet au fil du temps, simulant des effets comme la résistance de l'air.
+								angularDamping: 0// Angular Damping (Amortissement angulaire) : Réduit progressivement la vitesse de rotation d'un objet.
+							}
+						]
+					},
+
+					// floorsByName: {
+					// 	main: {
+					// 		name: 'floor',
+					// 		categorie: 'Floor',
+					// 		floorSizes: {
+					// 			x: 101,
+					// 			y: 101,
+					// 			z: 0.1
+					// 		},
+					// 		helper: {
+					// 			color: 0x000000,
+					// 			colorGrid: 0x33ff33,
+					// 		},
+					// 		castShadow: false,
+					// 		receiveShadow: true,
+					// 		color: 0x000000,
+					// 		ambient: 0x121212,
+					// 		emissive: 0x121212,
+					// 		emissiveIntensity: 2,
+					// 	},
+					// 	main2: {
+					// 		name: 'floor',
+					// 		categorie: 'Floor',
+					// 		floorSizes: {
+					// 			x: 10,
+					// 			y: 10,
+					// 			z: 0.1
+					// 		},
+					// 		castShadow: false,
+					// 		receiveShadow: true,
+					// 		color: 0x000000,
+					// 		ambient: 0x121212,
+					// 		emissive: 0x121212,
+					// 		emissiveIntensity: 2,
+					// 	}
+					// },
+					cameras: {
+						main: {
+							position: new THREE.Vector3(0, 1, 5),
+							fov: 40,
+							near: .1,
+							far: 1000,
+							idealLookAt: new THREE.Vector3(0, 0, 0),
+							name: 'main'
+						},
+						test: {
+							position: new THREE.Vector3(3, 0, 3),
+							fov: 40,
+							near: .1,
+							far: 1000,
+							idealLookAt: new THREE.Vector3(0, 0, 0),
+							name: 'test'
+						}
+					},
+					get_ByCategoryThenName: function (category = false, name = false) {
+						if (category && name) {
+							let finalCategory = category + 'ByName'
+							try {
+								let conf = this[finalCategory][name];
+								if (typeof conf === 'object') {
+									return conf
+								}
+							} catch (error) {
+								return false;
+							}
+						}
+						return false;
+					}
+				};
+				let _tools = {
+					id: new Number(0),
+					createDiv: function (params) {
+						let element = document.createElement(params.tag);
+						if (params.attributes) {
+							for (const key in params.attributes) {
+								if (Object.hasOwnProperty.call(params.attributes, key))
+									element[key] = params.attributes[key];
+								if (params.style) {
+									for (const key2 in params.style) {
+										if (Object.hasOwnProperty.call(params.style, key2))
+											element.style[key2] = params.style[key2];
+									}
+								}
+							}
+						}
+						return element;
+					},
+					addCss(stringcss, styleid) {
+						let style = document.createElement("style");
+						style.textContent = stringcss;
+						style.id = "css_" + styleid;
+						document.getElementsByTagName("head")[0].appendChild(style);
+					},
+					sanitize: function (string) {
+						const map = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#x27;", "./": "&#x2F;" };
+						const reg = /[&<>"'/]/gi;
+						return string.replace(reg, (match) => map[match]);
+					},
+					rand: (min, max) => { return Math.floor(Math.random() * (max - min + 1) + min); }
+					// get_DegreeWithTwoPos: function (x, y, X, Y) { return (Math.atan2(Y - y, X - x) * 180) / Math.PI; },
+					// get_aleaPos: function () {return {x: this.rand(50, window.innerWidth - 50),y: this.rand(50, window.innerHeight - 50)}}
+
+				};
+				let _texturesLoader = {
+					textures: {},
+					texturesDivByName: {},
+					counter: 0,
+					length: null,
+					textureLoader: new THREE.TextureLoader(),
+					files: _dataz.files,
+					init: function (callbackFunction) {
+						this.callbackFunction = callbackFunction
+						this.counter = 0
+						this.length = this.files.length
+						this.createModal()
+						this.files.forEach(file => {
+							this.addToStack(file)
+						});
+					},
+					checkEnd: function () {
+						if (this.counter === this.length) {
+
+							this.callbackFunction('FINITO textureLoader')
+							this.clearModal()
+						}
+					},
+					addToStack: function (file) {
+						this.texturesDivByName[file.name] = _tools.createDiv({
+							tag: 'div',
+							attributes: {
+								className: 'texture-item texture-' + file.name,
+								textContent: file.path + file.fileName
+							},
+							style: { width: '100%' }
+						})
+
+						this.modal.appendChild(this.texturesDivByName[file.name])
+
+						this.loadTexture(file, (map) => {
+							this.counter++;
+							this.textures[file.name] = { map: map, name: file.name }
+							// console.log('texture loaded', file.fileName, this.counter + '/' + this.length)
+							this.checkEnd()
+						});
+					},
+					clearModal: function () {
+						this.modal.remove()
+						delete this.texturesDivByName
+						delete this.modal
+					},
+					createModal: function () {
+						this.modal = _tools.createDiv({
+							tag: 'div',
+							attributes: {
+								className: 'textureloader'
+							},
+						})
+						this.css = `.textureloader{position:absolute;top:50%;left:50%;width: 200px;transform: translate( -50%, -50%);background-color:white;display:flex;justify-content:flex-start;align-items:center;flex-direction:column;.texture-item{background-color:pink;height: 25px;width:100%;padding:.5rem;margin-bottom:.2rem;overflow:hidden;}}`;
+
+						_tools.addCss(this.css, 'textureloader')
+						document.body.appendChild(this.modal)
+					},
+					loadTexture: function (file, callback) {
+						// Chargement de la texture
+						let fileUrl = file.path + file.fileName
+						this.textureLoader.load(
+							fileUrl,
+							(texture) => {
+								callback(texture);// La texture a été chargée avec succès !!!
+							},
+							(xhr) => {
+								// Progression du chargement de la texture (optionnel)
+								const percentLoaded = (xhr.loaded / xhr.total) * 100;
+								this.texturesDivByName[file.name].style.width = (100 - percentLoaded) + '%'
+								// console.log('Texture chargée :' + `${percentLoaded}% ${file.fileName} `);
+							},
+							(error) => {
+								// Gestion des erreurs
+								console.error('Erreur de chargement de la texture :', error);
+							}
+						);
+					},
+				};
+
+				let _physics = {
+					// Ammo.js
+					gravity: new THREE.Vector3(0, -9.810 * 2, 0),
+					inertia: new THREE.Vector3(0, 0, 0),
+					tmpTransformation: undefined,
+					physicsWorld: undefined,
+					rigidBody_List: new Array(),
+					_init: function () {
+						this.tmpTransformation = new Ammo.btTransform();
+						var collisionConfiguration = new Ammo.btDefaultCollisionConfiguration();
+						var dispatcher = new Ammo.btCollisionDispatcher(collisionConfiguration);
+						var overlappingPairCache = new Ammo.btDbvtBroadphase();
+						var solver = new Ammo.btSequentialImpulseConstraintSolver();
+						this.physicsWorld = new Ammo.btDiscreteDynamicsWorld(dispatcher, overlappingPairCache, solver, collisionConfiguration);
+						this.physicsWorld.setGravity(new Ammo.btVector3(this.gravity.x, this.gravity.y, this.gravity.z));
+					},
+					_transform: function (position, quaternion) {
+						let transform = new Ammo.btTransform();
+						transform.setIdentity();
+						transform.setOrigin(new Ammo.btVector3(position.x, position.y, position.z));
+						transform.setRotation(new Ammo.btQuaternion(quaternion.x, quaternion.y, quaternion.z, quaternion.w));
+						return transform
+					},
+					_updateRigidBodyList: function (delta) {
+						let toRemove = []; // Tableau pour stocker les indices des objets à supprimer
+						for (let i = 0; i < this.rigidBody_List.length; i++) {
+							let Graphics_Obj = this.rigidBody_List[i];
+							// if (Graphics_Obj.name === 'player') console.log('name:', Graphics_Obj.name)
+							let Physics_Obj = Graphics_Obj.userData.physicsBody;
+							let motionState = Physics_Obj.getMotionState();
+							//
+							if (motionState) {
+								motionState.getWorldTransform(this.tmpTransformation);
+								let new_pos = this.tmpTransformation.getOrigin();
+								let new_qua = this.tmpTransformation.getRotation();
+								Graphics_Obj.position.set(new_pos.x(), new_pos.y(), new_pos.z());
+								Graphics_Obj.quaternion.set(new_qua.x(), new_qua.y(), new_qua.z(), new_qua.w());
+
+								if (motionState && Graphics_Obj === _scene.player) {
+									// console.log('lecube')
+									// Vérifier la vitesse verticale pour déterminer si au sol
+									let linearVelocity = Physics_Obj.getLinearVelocity();
+									// _moove.isOnGround = new_pos.y() < 0.1 && Math.abs(linearVelocity.y()) < 0.2;
+									_moove.isOnGround = (Math.abs(linearVelocity.y()) < 0.2);
+								}
+								// console.log('_moove.isOnGround', _moove.isOnGround)
+
+								// Vérifier si la position y est inférieure à -5
+								if (new_pos.y() < -5) {
+									toRemove.push(i);
+								}
+
+							}
+						}
+						// supprimer les objets tombé trop bas
+						for (let index of toRemove.reverse()) {
+							let obj = this.rigidBody_List[index];
+							_scene.scene.remove(obj);// virer l'objet de la scene
+							this.physicsWorld.removeRigidBody(obj.userData.physicsBody);
+							this.rigidBody_List.splice(index, 1); // virer l'objet de rigidBody_List
+						}
+					},
+					createMesh2: function (element) {
+						let { position, sizes, mass, color, rotation_q, type, geometry, structColShape, material, inertia, categorie, friction, restitution, linearDamping, angularDamping } = element
+
+						let quaternion = (rotation_q == null) ? { x: 0, y: 0, z: 0, w: 1 } : rotation_q;
+						material = new THREE.MeshStandardMaterial({ map: _texturesLoader.textures[material].map });
+
+						structColShape.setMargin(0.05);
+						structColShape.calculateLocalInertia(mass, inertia);
+
+						let newMesh = new THREE.Mesh(geometry, material);
+						newMesh.position.set(position.x, position.y, position.z);
+						newMesh.castShadow = true;
+						newMesh.receiveShadow = true;
+
+						let transform = this._transform(position, quaternion);
+						let defaultMotionState = new Ammo.btDefaultMotionState(transform);
+						let RBody_Info = new Ammo.btRigidBodyConstructionInfo(mass, defaultMotionState, structColShape, inertia);
+						let RBody = new Ammo.btRigidBody(RBody_Info);
+
+						RBody.setFriction(friction);
+						RBody.setRestitution(restitution);
+						RBody.setDamping(linearDamping, angularDamping);
+
+						this.physicsWorld.addRigidBody(RBody);
+						newMesh.userData.physicsBody = RBody;
+						newMesh.userData.collided = false;
+						this.rigidBody_List.push(newMesh);
+						return newMesh;
+					},
+
+					createMesh: function (scale, position, mass, color, rotation_q, categorie, inertia) {
+						let quaternion = (rotation_q == null) ? { x: 0, y: 0, z: 0, w: 1 } : rotation_q
+						let geometry, structColShape;
+						let materialFloor;
+						let material = new THREE.MeshPhongMaterial({ color: color });
+						// Choose geometry and collision shapes based on category
+						switch (categorie) {
+							case 'Sphere':
+								geometry = new THREE.SphereGeometry(scale.x / 2, 32, 32);  // Assuming scale.x is the diameter
+								structColShape = new Ammo.btSphereShape(scale.x / 2);
+								break;
+							case 'Player1':
+								// console.log(_texturesLoader.textures)
+								geometry = new THREE.BoxGeometry(scale.x, scale.y, scale.z);
+								structColShape = new Ammo.btBoxShape(new Ammo.btVector3(scale.x * 0.5, scale.y * 0.5, scale.z * 0.5));
+								material = [
+									new THREE.MeshStandardMaterial({ map: _texturesLoader.textures.floor.map }),
+									new THREE.MeshStandardMaterial(_texturesLoader.textures.floor),
+									new THREE.MeshStandardMaterial(_texturesLoader.textures.floor),
+									new THREE.MeshStandardMaterial(_texturesLoader.textures.floor),
+									new THREE.MeshStandardMaterial(_texturesLoader.textures.floor),
+									new THREE.MeshStandardMaterial(_texturesLoader.textures.floor)
+								]
+
+								break;
+							case 'Box':
+								// console.log(_texturesLoader.textures)
+								material = new THREE.MeshStandardMaterial({ map: _texturesLoader.textures.foot.map });
+								geometry = new THREE.BoxGeometry(scale.x, scale.y, scale.z);
+								structColShape = new Ammo.btBoxShape(new Ammo.btVector3(scale.x * 0.5, scale.y * 0.5, scale.z * 0.5));
+								break;
+							case 'Floor':
+								mass = 0
+								// console.log(_texturesLoader.textures)
+								geometry = new THREE.BoxGeometry(scale.x, scale.y, scale.z);
+								structColShape = new Ammo.btBoxShape(new Ammo.btVector3(scale.x * 0.5, scale.y * 0.5, scale.z * 0.5));
+								material = new THREE.MeshPhongMaterial({ map: _texturesLoader.textures.foot.map });
+								break;
+							case 'Wall':
+								// console.log(_texturesLoader.textures)
+								mass = 0
+								geometry = new THREE.BoxGeometry(scale.x, scale.y, scale.z);
+								structColShape = new Ammo.btBoxShape(new Ammo.btVector3(scale.x * 0.5, scale.y * 0.5, scale.z * 0.5));
+								material = new THREE.MeshPhongMaterial({ map: _texturesLoader.textures.foot.map });
+								break;
+							case 'Capsule':
+								// Assuming scale.x is the radius and scale.y is the height
+								geometry = new THREE.CapsuleGeometry(scale.x, scale.y, 16, 32);
+								structColShape = new Ammo.btCapsuleShape(scale.x, scale.y);
+								break;
+							case 'Dodecahedron':
+								geometry = new THREE.DodecahedronGeometry(scale.x / 2);  // Assuming scale.x is the overall size
+								structColShape = new Ammo.btSphereShape(scale.x / 2);  // Approximate as a sphere
+								break;
+							case 'Cylinder':
+								geometry = new THREE.CylinderGeometry(scale.x / 2, scale.x / 2, scale.y, 32);
+								structColShape = new Ammo.btCylinderShape(new Ammo.btVector3(scale.x / 2, scale.y / 2, scale.x / 2));
+								break;
+							default:
+								console.error("Unknown category: " + categorie);
+								return;
+						}
+
+						structColShape.setMargin(0.05);
+						structColShape.calculateLocalInertia(mass, this.inertia);
+
+						let newMesh = new THREE.Mesh(geometry, material);
+						newMesh.position.set(position.x, position.y, position.z);
+						newMesh.castShadow = true;
+						newMesh.receiveShadow = true;
+
+						let transform = this._transform(position, quaternion);
+						let defaultMotionState = new Ammo.btDefaultMotionState(transform);
+						let RBody_Info = new Ammo.btRigidBodyConstructionInfo(mass, defaultMotionState, structColShape, this.inertia);
+						let RBody = new Ammo.btRigidBody(RBody_Info);
+
+
+						// Friction : La friction affecte la résistance des objets lorsqu'ils glissent les uns contre les autres. 				
+						RBody.setFriction(.5);  // Adjust this value as needed
+						RBody.setRestitution(0.5);  // Adjust this value as needed
+						// Linear Damping (Amortissement linéaire) : Réduit progressivement la vitesse d'un objet au fil du temps, simulant des effets comme la résistance de l'air.
+						// Angular Damping (Amortissement angulaire) : Réduit progressivement la vitesse de rotation d'un objet.
+
+						RBody.setDamping(0.5, 0.5);  // Linear damping, Angular damping
+						this.physicsWorld.addRigidBody(RBody);
+
+						newMesh.userData.physicsBody = RBody;
+						newMesh.userData.collided = false;
+						this.rigidBody_List.push(newMesh);
+
+						return newMesh;
+					},
+
+				}
+				let _soleil = {
+					sun: undefined,
+					sunGroupe: undefined,
+					config: undefined,
+					init: function () {
+						console.log(_dataz.suns.main)
+
+						this.sunConfig = _dataz.suns.main
+						this.add();
+
+					},
+					add: function () {
+						this.sunGroupe = new THREE.Group()
+						this.sunGroupe.name = 'grp_sun'
+						this.sunGroupe.position.set(
+							this.sunConfig.position.x,
+							this.sunConfig.position.y,
+							this.sunConfig.position.z,
+						);
+
+						// -------------------------------------------------
+						// une sphere là ou est le soleil
+						const sphereGeometry = new THREE.SphereGeometry(this.sunConfig.size.x, 32, 32);
+						const sphereMaterial = new THREE.MeshStandardMaterial({ color: this.sunConfig.mat.color, transparent: true, opacity: .5 });
+						const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+						sphere.castShadow = false;
+						sphere.receiveShadow = false;
+						this.sunGroupe.add(sphere);
+
+						// une autre sphere pour le soleil
+						const soleilGeometry = new THREE.SphereGeometry(this.sunConfig.size.x * .6, 16, 16);
+						const soleilMaterial = new THREE.MeshStandardMaterial({ color: this.sunConfig.mat.color, emissive: this.sunConfig.mat.emissive, emissiveIntensity: this.sunConfig.mat.emissiveIntensity });
+						const soleilAvatar = new THREE.Mesh(soleilGeometry, soleilMaterial);
+						soleilAvatar.castShadow = false;
+						soleilAvatar.receiveShadow = false;
+						this.sunGroupe.add(soleilAvatar);
+
+						// -------------------------------------------------
+						// le vrai soleil
+						this.sun = new THREE.DirectionalLight(
+							this.sunConfig.color,
+							this.sunConfig.power
+						);
+						this.sun.shadow.mapSize.width = 1024; // default
+						this.sun.shadow.mapSize.height = 1024; // default
+
+						this.sun.shadow.camera.near = 2; // default
+						this.sun.shadow.camera.far = 50; // default
+
+						this.sun.name = 'sun'
+						const d = 14;
+						this.sun.shadow.camera.left = -d;
+						this.sun.shadow.camera.right = d;
+						this.sun.shadow.camera.top = d;
+						this.sun.shadow.camera.bottom = -d;
+
+						// this.sun.direction = { x: 0, y: 0, z: 0 }
+						this.sunGroupe.add(this.sun);
+
+						this.sun.castShadow = true;
+						this.sun.receiveShadow = false;
+
+						// // Add helper for the shadow camera
+						// const helper = new THREE.CameraHelper(this.sun.shadow.camera);
+						// _scene.scene.add(helper);
+
+						_scene.scene.add(this.sunGroupe);
+						this.animate()
+					},
+					// -----------------------------
+					rotateAroundPoint: (obj, center, radius, angleIncrement) => {
+						obj.userData.angle = (obj.userData.angle || 0) + (angleIncrement * delta);
+
+						const x = center.x + radius * Math.cos(obj.userData.angle);
+						const y = center.y + radius * Math.sin(obj.userData.angle);
+						const z = center.z + radius * Math.sin(obj.userData.angle)//obj.position.z; // Garder la même hauteur
+
+						obj.position.set(x, y, z);
+					},
+					animate: function () {
+						this.rotateAroundPoint(
+							this.sunGroupe, // qui tourne
+							new THREE.Vector3(0, 0, 0), // autour de quel point
+							this.sunConfig.radius, // à quelle distance du point
+							this.sunConfig.rotationSpeed // à quelle vitesse
+						);
+					}
+				};
+				let _scene = {
+					scene: undefined,
+					camera: undefined,
+					renderer: undefined,
+					player: undefined,
+					add_SceneBackground: function () {
+						let room = new THREE.LineSegments(
+							new BoxLineGeometry(100, 100, 100, 20, 20, 20),
+							new THREE.LineBasicMaterial({ color: 0xbcbcbc })
+						);
+						_scene.scene.add(room);
+					},
+					add_lights: function () {
+						const light = new THREE.DirectionalLight(0xFFFFFF, 3);
+						light.position.set(20, 20, 20);
+						light.shadow.mapSize.width = 1024; // default
+						light.shadow.mapSize.height = 1024; // default
+						light.shadow.camera.near = 2; // default
+						light.shadow.camera.far = 50; // default
+						const d = 14;
+						light.shadow.camera.left = -d;
+						light.shadow.camera.right = d;
+						light.shadow.camera.top = d;
+						light.shadow.camera.bottom = -d;
+						const ambientLight = new THREE.AmbientLight(0xbbbbbb);
+						this.scene.add(light, ambientLight)
+					},
+					//---------------------------------
+					add_objets: function () {
+						_scene.bloc1 = _physics.createMesh(new THREE.Vector3(1, 1, 1), new THREE.Vector3(-3, 20, -3), 1, 0xff0000, null, 'Box');
+						_scene.bloc2 = _physics.createMesh(new THREE.Vector3(1, 1, 1), new THREE.Vector3(3, 20, 3), 1, 0x0000ff, null, 'Box');
+						_scene.bloc3 = _physics.createMesh(new THREE.Vector3(1, 1, 1), new THREE.Vector3(3, 20, 3), 1, 0x0000ff, null, 'Box');
+
+						_scene.sphere1 = _physics.createMesh(new THREE.Vector3(1, 1, 1), new THREE.Vector3(2, 20, 2), 1, Math.random() * 0xffffff, null, 'Sphere');
+						_scene.sphere2 = _physics.createMesh(new THREE.Vector3(1, 1, 1), new THREE.Vector3(-2, 20, -2), 1, Math.random() * 0xffffff, null, 'Sphere');
+						_scene.capsule = _physics.createMesh(new THREE.Vector3(1, 1, 1), new THREE.Vector3(-2, 20, -2), 1, Math.random() * 0xffffff, null, 'Capsule');
+						_scene.dodecahedron = _physics.createMesh(new THREE.Vector3(1, 1, 1), new THREE.Vector3(-4, 20, -4), 1, Math.random() * 0xffffff, null, 'Dodecahedron');
+						_scene.cylinder = _physics.createMesh(new THREE.Vector3(1, 1, 1), new THREE.Vector3(3, 20, -1), 1, Math.random() * 0xffffff, null, 'Cylinder');
+						this.scene.add(_scene.bloc1, _scene.bloc2, _scene.bloc3, _scene.sphere1, _scene.sphere2, _scene.capsule, _scene.dodecahedron, _scene.cylinder)
+					},
+					add_player: function () {
+						_scene.player = _physics.createMesh(new THREE.Vector3(1, 1, 1), new THREE.Vector3(0, 15, 0), 5, 0xF27438, null, 'Player1');
+
+						_scene.playerEyes = new THREE.Group()
+						const geometry = new THREE.BoxGeometry(.13, .13, .1)
+						const material = new THREE.MeshPhongMaterial({ color: 0x000000 })
+						let EyeLeft = new THREE.Mesh(geometry, material);
+						let EyeRight = new THREE.Mesh(geometry, material);
+						_scene.playerEyes.position.set(0, 0.25, 0);
+						EyeLeft.position.set(.20, 0, -.5);
+						EyeRight.position.set(-.20, 0, -.5);
+						_scene.playerEyes.add(EyeLeft, EyeRight)
+						_scene.player.add(_scene.playerEyes)
+
+						this.scene.add(_scene.player)
+					},
+					add_camera: function () {
+						this.camera = new THREE.PerspectiveCamera(_dataz.cameras.main.fov, window.innerWidth / window.innerHeight, _dataz.cameras.main.near, _dataz.cameras.main.far);
+						this.camera.position.set(_dataz.cameras.main.position.x, _dataz.cameras.main.position.y, _dataz.cameras.main.position.z);
+					},
+					init: function () {
+						this.scene = new THREE.Scene();
+						_soleil.init()
+						this.add_lights()
+						floorManager.add_floors()
+						this.add_objets()
+						this.add_player()
+						this.add_camera()
+						this.add_SceneBackground()
+						{
+							// renderer
+							this.renderer = new THREE.WebGLRenderer({ antialias: true });
+							this.renderer.setPixelRatio(window.devicePixelRatio);
+							this.renderer.setSize(window.innerWidth, window.innerHeight);
+							this.renderer.shadowMap.enabled = true;
+							this.renderer.shadowMap.enabled = true;
+							this.renderer.setClearColor(0x000000, 1);
+
+							document.body.appendChild(this.renderer.domElement);
+						}
+
+					},
+					_ANIMATE: function () {
+						requestAnimationFrame((time) => {
+							delta = Math.min(clock.getDelta(), fixedTimeStep);
+							// _soleil.animate()
+							_moove.checkMoves()
+							_physics.physicsWorld.stepSimulation(delta, 10, fixedTimeStep);  // consistent physics updates
+							_physics._updateRigidBodyList(delta);
+							updateRender();
+							stats.update();
+							this._ANIMATE();
+						});
+					},
+				}
+				let _pivot = {
+					pivot: new THREE.Object3D(),
+					yaw: new THREE.Object3D(),
+					pitch: new THREE.Object3D(),
+					init: function () {
+						this.pivot.position.set(0, 0, 0);
+						_scene.scene.add(this.pivot);
+						this.pivot.add(this.yaw);
+						this.yaw.add(this.pitch);
+						this.pitch.add(_scene.camera);
+					}
+				}
+				let _mouse = {
+					Left: false,
+					Right: false,
+					pointerLocked: false,
+					init: function () {
+						document.addEventListener('mousedown', (e) => {
+							if (e.button === 0) { _mouse.Left = true; }
+							if (e.button === 2) { _mouse.Right = true; }
+						});
+						document.addEventListener('mouseup', (e) => {
+							if (e.button === 0) { _mouse.Left = false; }
+							if (e.button === 2) { _mouse.Right = false; }
+						});
+						document.addEventListener('mouseleave', (e) => {
+							_mouse.Left = false;
+							_mouse.Right = false;
+						});
+					}
+				}
+				let _moove = {
+					moveForward: false,
+					moveBackward: false,
+					moveLeft: false,
+					moveRight: false,
+					jump: false,
+					isOnGround: false,
+					pointerLocked: false,
+					keyMap: {},
+					init: function () {
+						document.addEventListener("pointerlockchange", () => {
+							if (document.pointerLockElement === _scene.renderer.domElement) {
+								this.pointerLocked = true;
+
+								startButton.style.display = "none";
+								menuPanel.style.display = "none";
+								document.addEventListener("keydown", this.onDocumentKey, false);
+								document.addEventListener("keyup", this.onDocumentKey, false);
+								_scene.renderer.domElement.addEventListener("mousemove", this.onDocumentMouseMove, false);
+								_scene.renderer.domElement.addEventListener("wheel", this.onDocumentMouseWheel, false);
+							} else {
+								this.pointerLocked = false;
+
+								menuPanel.style.display = "block";
+								document.removeEventListener("keydown", this.onDocumentKey, false);
+								document.removeEventListener("keyup", this.onDocumentKey, false);
+								_scene.renderer.domElement.removeEventListener("mousemove", this.onDocumentMouseMove, false);
+								_scene.renderer.domElement.removeEventListener("wheel", this.onDocumentMouseWheel, false);
+
+								setTimeout(() => {
+									startButton.style.display = "block";
+								}, 1000);
+							}
+						});
+					},
+					onDocumentKey: (e) => {
+						_moove.keyMap[e.code] = (e.type === "keydown");
+						if (_moove.pointerLocked) {
+							_moove.moveForward = _moove.keyMap["KeyW"];
+							_moove.moveBackward = _moove.keyMap["KeyS"];
+							_moove.moveLeft = _moove.keyMap["KeyA"];
+							_moove.moveRight = _moove.keyMap["KeyD"];
+							_moove.jump = _moove.keyMap["Space"];
+						}
+					},
+					onDocumentMouseMove: (e) => {
+						_pivot.yaw.rotation.y -= e.movementX * 0.002;
+						const vec = _pivot.pitch.rotation.x - e.movementY * 0.002;
+						if (vec > -1 && vec < 0.1) {
+							_pivot.pitch.rotation.x = vec;
+						}
+						return false;
+					},
+					onDocumentMouseWheel: (e) => {
+						const vec = _scene.camera.position.z + e.deltaY * 0.005;
+						if (vec >= 2 && vec <= 10) {
+							_scene.camera.position.z = vec;
+						}
+						return false;
+					},
+					checkMoves: function () {
+						inputVelocity.set(0, 0, 0);
+						if (this.moveForward) {
+							inputVelocity.z = -5 * delta;
+						}
+						if (this.moveBackward) {
+							inputVelocity.z = 5 * delta;
+						}
+						if (this.moveLeft) {
+							inputVelocity.x = -5 * delta;
+						}
+						if (this.moveRight) {
+							inputVelocity.x = 5 * delta;
+						}
+						if (!_mouse.Right) {// apply camera rotation to inputVelocity
+							euler.y = _pivot.yaw.rotation.y;
+							quaternion.setFromEuler(euler);
+							inputVelocity.applyQuaternion(quaternion);
+							//capsule.position.add(inputVelocity);
+						}
+						// Mettre à jour la position de _scene.player à travers Bodyrigide
+						let playerPhysicsBody = _scene.player.userData.physicsBody;
+						let ms = playerPhysicsBody.getMotionState();
+						if (ms) {
+							let transform = new Ammo.btTransform();
+							ms.getWorldTransform(transform);
+							let position = transform.getOrigin();
+							position.setX(position.x() + inputVelocity.x);
+							position.setY(position.y() + inputVelocity.y);
+							position.setZ(position.z() + inputVelocity.z);
+
+							// console.log(_moove.jump, _moove.isOnGround)
+
+							if (_moove.jump && _moove.isOnGround) { // Simple vérification pour permettre de sauter seulement si on est proche du sol
+								let jumpForce = new Ammo.btVector3(0, 50, 0); // Modifier la force du saut selon besoin
+								playerPhysicsBody.applyCentralImpulse(jumpForce);
+								_moove.jump = false
+							}
+							transform.setOrigin(position);
+
+							// rotate player
+							let rotation = new Ammo.btQuaternion(quaternion.x, quaternion.y, quaternion.z, quaternion.w);
+							transform.setRotation(rotation);
+
+							// updatePlayerVelocity()
+							ms.setWorldTransform(transform);
+							playerPhysicsBody.activate();
+							playerPhysicsBody.setMotionState(ms);
+						}
+						let vvvv = new THREE.Vector3(0, 0, 0)
+						_scene.player.getWorldPosition(vvvv);
+						// _pivot.pivot.position.lerp(v, 0.1);
+						_pivot.pivot.position.set(vvvv.x, vvvv.y, vvvv.z);
+
+						// _physics._updateRigidBodyList(delta);
+						// updateRender();
+
+					}
+				}
+				let _menuPanel = {
+					init: function () {
+						this.menuPanel = document.getElementById("menuPanel");
+						this.startButton = document.getElementById("startButton");
+						this.startButton.addEventListener(
+							"click",
+							() => {
+								_scene.renderer.domElement.requestPointerLock();
+							},
+							false
+						);
+
+					}
+				}
+
+				const stats = new Stats();
+				document.body.appendChild(stats.dom);
+
+				window.addEventListener("resize", onWindowResize, false);
+				_texturesLoader.init(start)
+			}
+			Ammo().then(initWorld);
+		</script>
+	</body>
+
+</html>

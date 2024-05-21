@@ -60,13 +60,17 @@
 		<script type="module">
 			import * as THREE from "three";
 			import Stats from 'three/addons/libs/stats.module.js';
+
+			import { BoxLineGeometry } from 'three/addons/geometries/BoxLineGeometry.js';
 			let initWorld = (Ammo) => {
-				const v = new THREE.Vector3();
 				const inputVelocity = new THREE.Vector3();
 				const euler = new THREE.Euler();
 				const quaternion = new THREE.Quaternion();
+
 				const clock = new THREE.Clock();
+				const fixedTimeStep = 1 / 60; // 60 Hz which corresponds to about 16.67 milliseconds
 				let delta = 0;
+
 				//---------------------------------
 				let onWindowResize = function () {
 					_scene.camera.aspect = window.innerWidth / window.innerHeight;
@@ -85,9 +89,100 @@
 					_scene.init()
 					_pivot.init()
 					_moove.init()
-					_scene._REFRESH()
+					_scene._ANIMATE()
 				}
 				//---------------------------------
+				let _dataz = {
+					files: [
+						{ name: 'floor', shapeType: 'cube', path: 'textures/', fileName: 'sol.jpg' },
+						{ name: 'wall', shapeType: 'cube', path: 'textures/', fileName: 'wall_2.jpg' },
+						{ name: 'foot', shapeType: 'cube', path: 'textures/', fileName: 'foot.jpg' },
+					],
+					suns: {
+						main: {
+							name: 'soleil',
+							color: 0xFFFFFF,
+							power: 3,
+							radius: 25,
+							rotationSpeed: 0.0005,
+							position: new THREE.Vector3(20, 10, 20),
+							size: { x: 1, y: 1, z: 1 },
+							mat: {
+								color: 0xFFFFFF00,
+								emissive: 0xFF00FF,
+								emissiveIntensity: 2,
+							},
+						}
+					},
+					floorsByName: {
+						main: {
+							name: 'floor',
+							categorie: 'Floor',
+							floorSizes: {
+								x: 101,
+								y: 101,
+								z: 0.1
+							},
+							helper: {
+								color: 0x000000,
+								colorGrid: 0x33ff33,
+							},
+							castShadow: false,
+							receiveShadow: true,
+							color: 0x000000,
+							ambient: 0x121212,
+							emissive: 0x121212,
+							emissiveIntensity: 2,
+						},
+						main2: {
+							name: 'floor',
+							categorie: 'Floor',
+							floorSizes: {
+								x: 10,
+								y: 10,
+								z: 0.1
+							},
+							castShadow: false,
+							receiveShadow: true,
+							color: 0x000000,
+							ambient: 0x121212,
+							emissive: 0x121212,
+							emissiveIntensity: 2,
+						}
+					},
+					cameras: {
+						main: {
+							position: new THREE.Vector3(0, 1, 5),
+							fov: 40,
+							near: .1,
+							far: 1000,
+							idealLookAt: new THREE.Vector3(0, 0, 0),
+							name: 'main'
+						},
+						test: {
+							position: new THREE.Vector3(3, 0, 3),
+							fov: 40,
+							near: .1,
+							far: 1000,
+							idealLookAt: new THREE.Vector3(0, 0, 0),
+							name: 'test'
+						}
+					},
+					get_ByCategoryThenName: function (category = false, name = false) {
+						if (category && name) {
+							let finalCategory = category + 'ByName'
+							try {
+								let conf = this[finalCategory][name];
+								if (typeof conf === 'object') {
+									return conf
+								}
+							} catch (error) {
+								return false;
+							}
+						}
+						return false;
+					}
+				};
 				let _tools = {
 					id: new Number(0),
 					createDiv: function (params) {
@@ -128,30 +223,17 @@
 					counter: 0,
 					length: null,
 					textureLoader: new THREE.TextureLoader(),
-					files: [
-						{ name: 'floor', shapeType: 'cube', path: 'textures/', fileName: 'sol.jpg' },
-						// { name: 'back', shapeType: 'sphere', path: './textures/', fileName: 'back.png' },
-						// { name: 'support', shapeType: 'capsule', path: './textures/', fileName: 'support.png' },
-						// { name: 'side', path: './textures/', fileName: 'side.png' },
-						// { name: 'top', path: './textures/', fileName: 'top.png' },
-						// { name: 'Stone_Floor_Occlusion', path: './textures/stone/', fileName: 'Stylized_Stone_Floor_005_ambientOcclusion.jpg' },
-						// { name: 'Stone_Floor_basecolor', path: './textures/stone/', fileName: 'Stylized_Stone_Floor_005_basecolor.jpg' },
-						// { name: 'Stone_Floor_height', path: './textures/stone/', fileName: 'Stylized_Stone_Floor_005_height.png' },
-						// { name: 'Stone_Floor_normal', path: './textures/stone/', fileName: 'Stylized_Stone_Floor_005_normal.jpg' },
-						// { name: 'Stone_Floor_roughness', path: './textures/stone/', fileName: 'Stylized_Stone_Floor_005_roughness.jpg' },
-					],
+					files: _dataz.files,
 					init: function (callbackFunction) {
 						this.callbackFunction = callbackFunction
 						this.counter = 0
 						this.length = this.files.length
 						this.createModal()
-						// Chargement des textures pour chaque objet
 						this.files.forEach(file => {
 							this.addToStack(file)
 						});
 					},
 					checkEnd: function () {
-						console.log('hh', this.textures)
 						if (this.counter === this.length) {
 
 							this.callbackFunction('FINITO textureLoader')
@@ -173,7 +255,7 @@
 						this.loadTexture(file, (map) => {
 							this.counter++;
 							this.textures[file.name] = { map: map, name: file.name }
-							console.log('texture loaded', file.fileName, this.counter + '/' + this.length)
+							// console.log('texture loaded', file.fileName, this.counter + '/' + this.length)
 							this.checkEnd()
 						});
 					},
@@ -183,7 +265,6 @@
 						delete this.modal
 					},
 					createModal: function () {
-						console.log('attendues:', this.length)
 						this.modal = _tools.createDiv({
 							tag: 'div',
 							attributes: {
@@ -197,18 +278,17 @@
 					},
 					loadTexture: function (file, callback) {
 						// Chargement de la texture
-						let fileurl = file.path + file.fileName
+						let fileUrl = file.path + file.fileName
 						this.textureLoader.load(
-							fileurl,
+							fileUrl,
 							(texture) => {
-								// La texture a été chargée avec succès !!!
-								callback(texture);
+								callback(texture);// La texture a été chargée avec succès !!!
 							},
 							(xhr) => {
 								// Progression du chargement de la texture (optionnel)
 								const percentLoaded = (xhr.loaded / xhr.total) * 100;
 								this.texturesDivByName[file.name].style.width = (100 - percentLoaded) + '%'
-								console.log('Texture chargée :' + `${percentLoaded}% ${file.fileName} `);
+								// console.log('Texture chargée :' + `${percentLoaded}% ${file.fileName} `);
 							},
 							(error) => {
 								// Gestion des erreurs
@@ -216,86 +296,6 @@
 							}
 						);
 					},
-				};
-				let _dataz = {
-					suns: {
-						main: {
-							name: 'soleil',
-							color: 0xFFFFFF,
-							power: 3,
-							radius: 25,
-							rotationSpeed: 0.0005,
-							position: new THREE.Vector3(20, 10, 20),
-							size: { x: 1, y: 1, z: 1 },
-							mat: {
-								color: 0xFFFFFF00,
-								emissive: 0xFF00FF,
-								emissiveIntensity: 2,
-							},
-						}
-					},
-					floorsByName: {
-						main: {
-							name: 'floor',
-							categorie: 'Box',
-							floorSizes: {
-								x: 101,
-								y: 101,
-								z: 0.1
-							},
-							helper: {
-								color: 0x000000,
-								colorGrid: 0x33ff33,
-							},
-							castShadow: false,
-							receiveShadow: true,
-							color: 0x000000,
-						},
-						main2: {
-							name: 'floor',
-							categorie: 'Box',
-							floorSizes: {
-								x: 10,
-								y: 10,
-								z: 0.1
-							},
-							castShadow: false,
-							receiveShadow: true,
-							color: 0x000000,
-						}
-					},
-					camerasByName: {
-						main: {
-							position: new THREE.Vector3(0, 2, 10),
-							fov: 40,
-							near: .1,
-							far: 1000,
-							idealLookAt: new THREE.Vector3(0, 0, 0),
-							name: 'main'
-						},
-						test: {
-							position: new THREE.Vector3(3, 0, 3),
-							fov: 40,
-							near: .1,
-							far: 1000,
-							idealLookAt: new THREE.Vector3(0, 0, 0),
-							name: 'test'
-						}
-					},
-					get_ByCategoryThenName: function (category = false, name = false) {
-						if (category && name) {
-							let finalCategory = category + 'ByName'
-							try {
-								let conf = this[finalCategory][name];
-								if (typeof conf === 'object') {
-									return conf
-								}
-							} catch (error) {
-								return false;
-							}
-						}
-						return false;
-					}
 				};
 
 				let _physics = {
@@ -331,9 +331,8 @@
 						}
 						return quaternion
 					},
-					_update_rigidBody_List: function (deltaTime) {
+					_updateRigidBodyList: function (delta) {
 						let toRemove = []; // Tableau pour stocker les indices des objets à supprimer
-						this.physicsWorld.stepSimulation(deltaTime, 10);
 						for (let i = 0; i < this.rigidBody_List.length; i++) {
 							let Graphics_Obj = this.rigidBody_List[i];
 							// if (Graphics_Obj.name === 'player') console.log('name:', Graphics_Obj.name)
@@ -352,7 +351,7 @@
 									// Vérifier la vitesse verticale pour déterminer si au sol
 									let linearVelocity = Physics_Obj.getLinearVelocity();
 									// _moove.isOnGround = new_pos.y() < 0.1 && Math.abs(linearVelocity.y()) < 0.2;
-									_moove.isOnGround = (Math.abs(linearVelocity.y()) < 0.1);
+									_moove.isOnGround = (Math.abs(linearVelocity.y()) < 0.2);
 								}
 								// console.log('_moove.isOnGround', _moove.isOnGround)
 
@@ -371,7 +370,12 @@
 							this.rigidBody_List.splice(index, 1); // virer l'objet de rigidBody_List
 						}
 					},
+					createFloor: function (datas) {
+						console.log(datas)
+
+					},
 					createMesh: function (scale, position, mass, color, rotation_q, categorie) {
+						let inertia = this.inertia
 						let quaternion = this._quaternion(rotation_q);
 						let geometry, structColShape;
 						let materialFloor;
@@ -382,11 +386,39 @@
 								geometry = new THREE.SphereGeometry(scale.x / 2, 32, 32);  // Assuming scale.x is the diameter
 								structColShape = new Ammo.btSphereShape(scale.x / 2);
 								break;
-							case 'Box':
-								console.log(_texturesLoader.textures)
+							case 'Player1':
+								// console.log(_texturesLoader.textures)
 								geometry = new THREE.BoxGeometry(scale.x, scale.y, scale.z);
 								structColShape = new Ammo.btBoxShape(new Ammo.btVector3(scale.x * 0.5, scale.y * 0.5, scale.z * 0.5));
-								material = new THREE.MeshPhongMaterial({ map: _texturesLoader.textures.floor.map });
+								material = [
+									new THREE.MeshStandardMaterial({ map: _texturesLoader.textures.floor.map }),
+									new THREE.MeshStandardMaterial(_texturesLoader.textures.floor),
+									new THREE.MeshStandardMaterial(_texturesLoader.textures.floor),
+									new THREE.MeshStandardMaterial(_texturesLoader.textures.floor),
+									new THREE.MeshStandardMaterial(_texturesLoader.textures.floor),
+									new THREE.MeshStandardMaterial(_texturesLoader.textures.floor)
+								]
+
+								break;
+							case 'Box':
+								// console.log(_texturesLoader.textures)
+								material = new THREE.MeshStandardMaterial({ map: _texturesLoader.textures.foot.map });
+								geometry = new THREE.BoxGeometry(scale.x, scale.y, scale.z);
+								structColShape = new Ammo.btBoxShape(new Ammo.btVector3(scale.x * 0.5, scale.y * 0.5, scale.z * 0.5));
+								break;
+							case 'Floor':
+								mass = 0
+								// console.log(_texturesLoader.textures)
+								geometry = new THREE.BoxGeometry(scale.x, scale.y, scale.z);
+								structColShape = new Ammo.btBoxShape(new Ammo.btVector3(scale.x * 0.5, scale.y * 0.5, scale.z * 0.5));
+								material = new THREE.MeshPhongMaterial({ map: _texturesLoader.textures.foot.map });
+								break;
+							case 'Wall':
+								// console.log(_texturesLoader.textures)
+								mass = 0
+								geometry = new THREE.BoxGeometry(scale.x, scale.y, scale.z);
+								structColShape = new Ammo.btBoxShape(new Ammo.btVector3(scale.x * 0.5, scale.y * 0.5, scale.z * 0.5));
+								material = new THREE.MeshPhongMaterial({ map: _texturesLoader.textures.foot.map });
 								break;
 							case 'Capsule':
 								// Assuming scale.x is the radius and scale.y is the height
@@ -419,6 +451,14 @@
 						let RBody_Info = new Ammo.btRigidBodyConstructionInfo(mass, defaultMotionState, structColShape, this.inertia);
 						let RBody = new Ammo.btRigidBody(RBody_Info);
 
+
+						// Friction : La friction affecte la résistance des objets lorsqu'ils glissent les uns contre les autres. 				
+						RBody.setFriction(.5);  // Adjust this value as needed
+						RBody.setRestitution(0.5);  // Adjust this value as needed
+						// Linear Damping (Amortissement linéaire) : Réduit progressivement la vitesse d'un objet au fil du temps, simulant des effets comme la résistance de l'air.
+						// Angular Damping (Amortissement angulaire) : Réduit progressivement la vitesse de rotation d'un objet.
+
+						RBody.setDamping(0.5, 0.5);  // Linear damping, Angular damping
 						this.physicsWorld.addRigidBody(RBody);
 
 						newMesh.userData.physicsBody = RBody;
@@ -539,103 +579,155 @@
 					camera: undefined,
 					renderer: undefined,
 					player: undefined,
+					add_SceneBackground: function () {
+
+						// //cubemap
+						// const path = 'textures/';
+						// const format = '.jpg';
+						// const urls = [
+						// 	path + 'sol' + format, path + 'sol' + format,
+						// 	path + 'sol' + format, path + 'sol' + format,
+						// 	path + 'sol' + format, path + 'sol' + format
+						// ];
+
+						// const reflectionCube = new THREE.CubeTextureLoader().load(urls);
+						// // const refractionCube = new THREE.CubeTextureLoader().load(urls);
+						// // refractionCube.mapping = THREE.CubeRefractionMapping;
+
+						// // scene = new THREE.Scene();
+						// _scene.scene.background = reflectionCube;
+
+
+						let room = new THREE.LineSegments(
+							new BoxLineGeometry(100, 100, 100, 20, 20, 20),
+							new THREE.LineBasicMaterial({ color: 0xbcbcbc })
+						);
+						_scene.scene.add(room);
+
+
+
+					},
+					add_lights: function () {
+						const light = new THREE.DirectionalLight(0xFFFFFF, 3);
+						light.position.set(20, 20, 20);
+						light.shadow.mapSize.width = 1024; // default
+						light.shadow.mapSize.height = 1024; // default
+						light.shadow.camera.near = 2; // default
+						light.shadow.camera.far = 50; // default
+						const d = 14;
+						light.shadow.camera.left = -d;
+						light.shadow.camera.right = d;
+						light.shadow.camera.top = d;
+						light.shadow.camera.bottom = -d;
+						const ambientLight = new THREE.AmbientLight(0xbbbbbb);
+						this.scene.add(light, ambientLight)
+					},
+					//---------------------------------
+					// let createrooms = {
+					// 	rooms: {
+					// 		0: {
+					// 			walls: [
+					// 				{ position: new THREE.Vector3(0, 0, 0), sizes: { h: 1, w: 1, d: 1 }, category: 'Wall', type: 'Wall', material: 'floor', mass: 0 }
+					// 			],
+					// 			floors: [
+					// 				{ position: new THREE.Vector3(0, 0, 0), sizes: { h: 1, w: 1, d: 1 }, category: 'Wall', type: 'Wall', material: 'floor', mass: 0 }
+					// 			]
+					// 		}
+					// 	},
+					floors: new Array(),
+					floorsList: {
+						0: [
+							{
+								scale: new THREE.Vector3(20, .5, 20),
+								position: new THREE.Vector3(-5, -.25, -5),
+								sizes: new THREE.Vector3(20, .5, 20),
+								mass: 0,
+								color: 0xffffff,
+								rotation_q: null,
+								type: 'Floor',
+								geometry: new THREE.BoxGeometry(20, .5, 20),
+								structColShape: new Ammo.btBoxShape(new Ammo.btVector3(20 * 0.5, 5 * 0.5, 20 * 0.5)),
+								material: 'sol',
+								inertia: 0
+							}
+						]
+					},
+					add_floors: function () {
+						this.floorsList[0].forEach(element => {
+							let mat =
+								_physics.createFloor(element)
+						});
+						_scene.floor1 = _physics.createMesh(new THREE.Vector3(20, .5, 20), new THREE.Vector3(-5, -.25, -5), 0, 0xffffff, null, 'Box');
+						_scene.floor2 = _physics.createMesh(new THREE.Vector3(5, .5, 5), new THREE.Vector3(10, 3, 10), 0, 0xEAEAEA, null, 'Box');
+						_scene.floor3 = _physics.createMesh(new THREE.Vector3(5, .5, 5), new THREE.Vector3(5, 10, 5), 0, 0xEAEAEA, null, 'Box');
+						_scene.floor4 = _physics.createMesh(new THREE.Vector3(5, .5, 5), new THREE.Vector3(0, 15, 0), 0, 0xEAEAEA, null, 'Box');
+						this.scene.add(_scene.floor1, _scene.floor2, _scene.floor3, _scene.floor4)
+					},
+					add_objets: function () {
+						_scene.bloc1 = _physics.createMesh(new THREE.Vector3(1, 1, 1), new THREE.Vector3(-3, 20, -3), 1, 0xff0000, null, 'Box');
+						_scene.bloc2 = _physics.createMesh(new THREE.Vector3(1, 1, 1), new THREE.Vector3(3, 20, 3), 1, 0x0000ff, null, 'Box');
+						_scene.bloc3 = _physics.createMesh(new THREE.Vector3(1, 1, 1), new THREE.Vector3(3, 20, 3), 1, 0x0000ff, null, 'Box');
+
+						_scene.sphere1 = _physics.createMesh(new THREE.Vector3(1, 1, 1), new THREE.Vector3(2, 20, 2), 1, Math.random() * 0xffffff, null, 'Sphere');
+						_scene.sphere2 = _physics.createMesh(new THREE.Vector3(1, 1, 1), new THREE.Vector3(-2, 20, -2), 1, Math.random() * 0xffffff, null, 'Sphere');
+						_scene.capsule = _physics.createMesh(new THREE.Vector3(1, 1, 1), new THREE.Vector3(-2, 20, -2), 1, Math.random() * 0xffffff, null, 'Capsule');
+						_scene.dodecahedron = _physics.createMesh(new THREE.Vector3(1, 1, 1), new THREE.Vector3(-4, 20, -4), 1, Math.random() * 0xffffff, null, 'Dodecahedron');
+						_scene.cylinder = _physics.createMesh(new THREE.Vector3(1, 1, 1), new THREE.Vector3(3, 20, -1), 1, Math.random() * 0xffffff, null, 'Cylinder');
+						this.scene.add(_scene.bloc1, _scene.bloc2, _scene.bloc3, _scene.sphere1, _scene.sphere2, _scene.capsule, _scene.dodecahedron, _scene.cylinder)
+					},
+					add_player: function () {
+						_scene.player = _physics.createMesh(new THREE.Vector3(1, 1, 1), new THREE.Vector3(0, 15, 0), 5, 0xF27438, null, 'Player1');
+
+						_scene.playerEyes = new THREE.Group()
+						const geometry = new THREE.BoxGeometry(.13, .13, .1)
+						const material = new THREE.MeshPhongMaterial({ color: 0x000000 })
+						let EyeLeft = new THREE.Mesh(geometry, material);
+						let EyeRight = new THREE.Mesh(geometry, material);
+						_scene.playerEyes.position.set(0, 0.25, 0);
+						EyeLeft.position.set(.20, 0, -.5);
+						EyeRight.position.set(-.20, 0, -.5);
+						_scene.playerEyes.add(EyeLeft, EyeRight)
+						_scene.player.add(_scene.playerEyes)
+
+						this.scene.add(_scene.player)
+					},
+					add_camera: function () {
+						this.camera = new THREE.PerspectiveCamera(_dataz.cameras.main.fov, window.innerWidth / window.innerHeight, _dataz.cameras.main.near, _dataz.cameras.main.far);
+						this.camera.position.set(_dataz.cameras.main.position.x, _dataz.cameras.main.position.y, _dataz.cameras.main.position.z);
+					},
 					init: function () {
 						this.scene = new THREE.Scene();
 						_soleil.init(_dataz)
-
-						// this.scene.add(new THREE.GridHelper());
+						this.add_lights()
+						this.add_floors()
+						this.add_objets()
+						this.add_player()
+						this.add_camera()
+						this.add_SceneBackground()
 						{
-							const light = new THREE.DirectionalLight(0xFFFFFF, 3);
-							light.position.set(20, 20, 20);
-							light.shadow.mapSize.width = 1024; // default
-							light.shadow.mapSize.height = 1024; // default
-							light.shadow.camera.near = 2; // default
-							light.shadow.camera.far = 50; // default
-							light.name = 'sun'
-
-							const d = 14;
-							light.shadow.camera.left = -d;
-							light.shadow.camera.right = d;
-							light.shadow.camera.top = d;
-							light.shadow.camera.bottom = -d;
-
-							const ambientLight = new THREE.AmbientLight(0xbbbbbb);
-
-							_scene.floor1 = _physics.createMesh(new THREE.Vector3(100, .5, 100), new THREE.Vector3(-5, -.25, -5), 0, 0xffffff, null, 'Box');
-							_scene.floor2 = _physics.createMesh(new THREE.Vector3(5, .5, 5), new THREE.Vector3(10, 3, 10), 0, 0xEAEAEA, null, 'Box');
-							_scene.floor3 = _physics.createMesh(new THREE.Vector3(5, .5, 5), new THREE.Vector3(5, 10, 5), 0, 0xEAEAEA, null, 'Box');
-							_scene.floor4 = _physics.createMesh(new THREE.Vector3(5, .5, 5), new THREE.Vector3(0, 15, 0), 0, 0xEAEAEA, null, 'Box');
-
-							_scene.bloc1 = _physics.createMesh(new THREE.Vector3(1, 1, 1), new THREE.Vector3(-3, 20, -3), 1, 0xff0000, null, 'Box');
-							_scene.bloc2 = _physics.createMesh(new THREE.Vector3(1, 1, 1), new THREE.Vector3(3, 20, 3), 1, 0x0000ff, null, 'Box');
-							_scene.bloc3 = _physics.createMesh(new THREE.Vector3(1, 1, 1), new THREE.Vector3(3, 20, 3), 1, 0x0000ff, null, 'Box');
-							_scene.sphere1 = _physics.createMesh(new THREE.Vector3(1, 1, 1), new THREE.Vector3(2, 20, 2), 1, Math.random() * 0xffffff, null, 'Sphere');
-							_scene.sphere2 = _physics.createMesh(new THREE.Vector3(1, 1, 1), new THREE.Vector3(-2, 20, -2), 1, Math.random() * 0xffffff, null, 'Sphere');
-							_scene.capsule = _physics.createMesh(new THREE.Vector3(1, 1, 1), new THREE.Vector3(-2, 20, -2), 1, Math.random() * 0xffffff, null, 'Capsule');
-							_scene.dodecahedron = _physics.createMesh(new THREE.Vector3(1, 1, 1), new THREE.Vector3(-4, 20, -4), 1, Math.random() * 0xffffff, null, 'Dodecahedron');
-							_scene.cylinder = _physics.createMesh(new THREE.Vector3(1, 1, 1), new THREE.Vector3(3, 20, -1), 1, Math.random() * 0xffffff, null, 'Cylinder');
-
-							_scene.player = _physics.createMesh(new THREE.Vector3(1, 1, 1), new THREE.Vector3(0, 15, 0), 5, 0xF27438, null, 'Box');
-
-							{
-								this.playerEyes = new THREE.Group()
-								const geometry = new THREE.BoxGeometry(.13, .13, .1)
-								const material = new THREE.MeshPhongMaterial({ color: 0x000000 })
-								let EyeLeft = new THREE.Mesh(geometry, material);
-								EyeLeft.castShadow = true;
-								EyeLeft.receiveShadow = true;
-								let EyeRight = new THREE.Mesh(geometry, material);
-								EyeRight.castShadow = true;
-								EyeRight.receiveShadow = true;
-								this.playerEyes.add(EyeLeft, EyeRight)
-								EyeLeft.position.set(.20, 0, -.5);
-								EyeRight.position.set(-.20, 0, -.5);
-								this.playerEyes.position.set(0, 0.25, 0);
-								_scene.player.add(this.playerEyes)
-							}
-							this.scene.add(light, ambientLight, _scene.player)
-
-							this.scene.add(_scene.floor1, _scene.floor2, _scene.floor3, _scene.floor4)
-
-							this.scene.add(_scene.cylinder)
-							this.scene.add(_scene.capsule)
-							this.scene.add(_scene.dodecahedron)
-							this.scene.add(_scene.bloc1, _scene.bloc2, _scene.bloc3)
-							this.scene.add(_scene.sphere1, _scene.sphere2)
-
-							// camera
-							this.camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 1000);
-							this.camera.position.set(0, 1, 5);
 							// renderer
 							this.renderer = new THREE.WebGLRenderer({ antialias: true });
 							this.renderer.setPixelRatio(window.devicePixelRatio);
 							this.renderer.setSize(window.innerWidth, window.innerHeight);
 							this.renderer.shadowMap.enabled = true;
 							this.renderer.shadowMap.enabled = true;
+							this.renderer.setClearColor(0x000000, 1);
 
 							document.body.appendChild(this.renderer.domElement);
 						}
 
 					},
-
-					_REFRESH: function () {
-						requestAnimationFrame((t) => {
-							// ----------
-							if (this._previousREFRESH === null) this._previousREFRESH = t;
-							this._STEP(t - this._previousREFRESH);
-							this._previousREFRESH = t;
-							this._REFRESH();
+					_ANIMATE: function () {
+						requestAnimationFrame((time) => {
+							delta = Math.min(clock.getDelta(), fixedTimeStep);
+							_moove.checkMoves()
+							_physics.physicsWorld.stepSimulation(delta, 10, fixedTimeStep);  // consistent physics updates
+							_physics._updateRigidBodyList(delta);
+							updateRender();
 							stats.update();
+							this._ANIMATE();
 						});
 					},
-					_STEP: function (timeElapsed) {
-						timeElapsed = timeElapsed * 0.001;
-						delta = clock.getDelta();
-
-
-						_moove.checkMoves()
-						_soleil.animate()
-					}
 				}
 				let _pivot = {
 					pivot: new THREE.Object3D(),
@@ -684,31 +776,18 @@
 
 								startButton.style.display = "none";
 								menuPanel.style.display = "none";
-
 								document.addEventListener("keydown", this.onDocumentKey, false);
 								document.addEventListener("keyup", this.onDocumentKey, false);
-
 								_scene.renderer.domElement.addEventListener("mousemove", this.onDocumentMouseMove, false);
 								_scene.renderer.domElement.addEventListener("wheel", this.onDocumentMouseWheel, false);
 							} else {
 								this.pointerLocked = false;
 
 								menuPanel.style.display = "block";
-
 								document.removeEventListener("keydown", this.onDocumentKey, false);
 								document.removeEventListener("keyup", this.onDocumentKey, false);
-
-								_scene.renderer.domElement.removeEventListener(
-									"mousemove",
-									this.onDocumentMouseMove,
-									false
-								);
-
-								_scene.renderer.domElement.removeEventListener(
-									"wheel",
-									this.onDocumentMouseWheel,
-									false
-								);
+								_scene.renderer.domElement.removeEventListener("mousemove", this.onDocumentMouseMove, false);
+								_scene.renderer.domElement.removeEventListener("wheel", this.onDocumentMouseWheel, false);
 
 								setTimeout(() => {
 									startButton.style.display = "block";
@@ -728,16 +807,16 @@
 					},
 					onDocumentMouseMove: (e) => {
 						_pivot.yaw.rotation.y -= e.movementX * 0.002;
-						const v = _pivot.pitch.rotation.x - e.movementY * 0.002;
-						if (v > -1 && v < 0.1) {
-							_pivot.pitch.rotation.x = v;
+						const vec = _pivot.pitch.rotation.x - e.movementY * 0.002;
+						if (vec > -1 && vec < 0.1) {
+							_pivot.pitch.rotation.x = vec;
 						}
 						return false;
 					},
 					onDocumentMouseWheel: (e) => {
-						const v = _scene.camera.position.z + e.deltaY * 0.005;
-						if (v >= 2 && v <= 10) {
-							_scene.camera.position.z = v;
+						const vec = _scene.camera.position.z + e.deltaY * 0.005;
+						if (vec >= 2 && vec <= 10) {
+							_scene.camera.position.z = vec;
 						}
 						return false;
 					},
@@ -779,8 +858,6 @@
 								playerPhysicsBody.applyCentralImpulse(jumpForce);
 								_moove.jump = false
 							}
-
-
 							transform.setOrigin(position);
 
 							// rotate player
@@ -792,13 +869,13 @@
 							playerPhysicsBody.activate();
 							playerPhysicsBody.setMotionState(ms);
 						}
-
-						_scene.player.getWorldPosition(v);
+						let vvvv = new THREE.Vector3(0, 0, 0)
+						_scene.player.getWorldPosition(vvvv);
 						// _pivot.pivot.position.lerp(v, 0.1);
-						_pivot.pivot.position.set(v.x, v.y, v.z);
+						_pivot.pivot.position.set(vvvv.x, vvvv.y, vvvv.z);
 
-						_physics._update_rigidBody_List(delta);
-						updateRender();
+						// _physics._updateRigidBodyList(delta);
+						// updateRender();
 
 					}
 				}
