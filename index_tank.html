@@ -27,92 +27,155 @@
 			"use strict";
 			import * as THREE from "three";
 			import { BoxLineGeometry } from 'three/addons/geometries/BoxLineGeometry.js';
+			import { clone } from 'three/addons/utils/SkeletonUtils.js';
 			import { orbitControls } from '/tankJs/OrbitControls.js'
 			import { _GLTFLoader, _TextureLoader } from '/tankJs/Loaders.js'
 			let initWorld = (Ammo) => {
 				// ------------------------
+				// SCENE CREATION
+				// ------------------------
+				let scene = new THREE.Scene();
+				scene.name = 'lv0';
+				console.log('0', scene)
+				// ------------------------
+				// CAMERA
+				// ------------------------
+				const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 1000);
+				camera.position.z = 5;
+				camera.position.y = 3;
+				camera.lookAt({ x: 0, y: 0, z: 0 })
+				// ------------------------
+				// RENDERER
+				// ------------------------
+				const renderer = new THREE.WebGLRenderer({
+					antialias: true,
+					alpha: true
+				});
+				renderer.shadowMap.enabled = true;
+				renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+				renderer.setSize(window.innerWidth, window.innerHeight);
+				renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+				renderer.setClearColor(0x000010, 1.0);
+				document.body.appendChild(renderer.domElement);
+				// ------------------------
+				// ROOM (décor)
+				// ------------------------
+				let room = new THREE.LineSegments(new BoxLineGeometry(100, 100, 100, 20, 20, 20), new THREE.LineBasicMaterial({ color: 0xbcbcbc }));
+				scene.add(room);
+				// ------------------------
+				// AMBIENT light
+				// ------------------------
+				const ambientLight = new THREE.AmbientLight(0xFFFFFF, 1); // soft white light
+				scene.add(ambientLight);
+				// ------------------------
+				// SUN light
+				// ------------------------
+				const SUN = new THREE.DirectionalLight(0xffffff, 2);
+				const SUNhelper = new THREE.DirectionalLightHelper(SUN, 5);
+				SUN.name = 'SUN';
+				SUN.userData.d = 10;
+				SUN.userData.amplitude = { range: 3, sens: 1 }
+				SUN.position.set(0, 5, 0);
+				SUN.shadow.mapSize.width = 1024; // default
+				SUN.shadow.mapSize.height = 1024; // default
+				SUN.shadow.camera.near = 2; // default
+				SUN.shadow.camera.far = 50; // default
+				SUN.shadow.camera.left = -SUN.userData.d;
+				SUN.shadow.camera.right = SUN.userData.d;
+				SUN.shadow.camera.top = SUN.userData.d;
+				SUN.shadow.camera.bottom = -SUN.userData.d;
+				SUN.castShadow = true
+				const SunCubeGeometry = new THREE.BoxGeometry(.1, .1, .1);
+				const SunCubeMaterial = new THREE.MeshPhongMaterial({ color: 0xFFFFFF });
+				const SunCube = new THREE.Mesh(SunCubeGeometry, SunCubeMaterial);
+				SunCube.position.set(0, SUN.position.y + 2, 0);
+				// SUN.add(SunCube)
+				SUN.animate = () => {
+					let sungo = setInterval(() => {
+						SUN.move()
+					}, 100)
+				}
+				SUN.move = () => {
+					if (SUN.position.x >= SUN.userData.amplitude.range) SUN.userData.amplitude.sens = -1;
+					if (SUN.position.x <= -SUN.userData.amplitude.range) SUN.userData.amplitude.sens = 1;
+					SUN.position.x = SUN.position.x + (SUN.userData.amplitude.sens * 0.01)
+					// console.log('SUN.move:', SUN.position.x)
+				}
+				SUN.starter = function () {
+					// this.animate()
+					console.log(this)
+					return this
+				}
+				scene.add(SUNhelper);
+				scene.add(SUN.starter());
+				// ------------------------
+				// POINT light
+				// ------------------------
+				const pointLight1 = new THREE.PointLight(0xff0000, 3, 100);
+				pointLight1.position.set(2, 1, 2);
+				const pointLight2 = new THREE.PointLight(0xffffff, 3, 100);
+				pointLight2.position.set(-2, 1, -2);
+				scene.add(pointLight2);
+				scene.add(pointLight1);
+				// ------------------------
+				// MESS
+				// ------------------------
+				// const cubeGeometry = new THREE.BoxGeometry(1, 1, 1);
+				// const cubeMaterial = new THREE.MeshStandardMaterial({ color: 0xFFFFFF });
+				// const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
+				// cube.castShadow = true;
+				// cube.receiveShadow = true
+				// // cube.rotation.x = -Math.PI / 2;
+				// cube.position.y = 1;
+				// scene.add(cube);
+				// // const cube2 = cube.clone();
+				// const cube2Geometry = new THREE.BoxGeometry(.3, .3, .3);
+				// const cube2 = new THREE.Mesh(cube2Geometry, cubeMaterial);
+				// cube2.castShadow = true;
+				// cube2.receiveShadow = true
+				// cube2.position.y = 1.7;
+				// scene.add(cube, cube2);
+				// ------------------------
+				// ANIMATION
+				// ------------------------
+				const animate = function () {
+					requestAnimationFrame(animate);
+					SUN.move()
+					_GLTFLoader.rotTankBase()
+					if (typeof orbitControls === 'object' && orbitControls.active === true) {
+						orbitControls.update()
+					}
+					// scene.rotation.y += 0.01; // Rotate the scene for some dynamics
+					renderer.render(scene, camera);
+				};
+
+				let PlayerStuff = {
+					playerModel: undefined,
+					init: function () {
+						// this.playerModel = _GLTFLoader.models
+						_GLTFLoader.addModelsToScene(scene)
+						let tempoMesh = _GLTFLoader.models.tank2
+						this.playerModel = clone(tempoMesh)
+
+						// SkeletonUtils.clone(), 
+						// this.playerModel.name = 'playerOne'
+						console.log(this.playerModel)
+						this.playerModel.children[0].material.color.r = 0
+						this.playerModel.children[0].material.color.g = 0
+						this.playerModel.children[0].material.color.b = 0.2
+						this.playerModel.children[0].children[3].material.color.r = 1
+						this.playerModel.children[0].children[3].material.color.g = 1
+						this.playerModel.children[0].children[3].material.color.b = 1
+						this.playerModel.position.set(0, 0, 0)
+						scene.add(this.playerModel)
+						console.log('playerModel', this.playerModel)
+					}
+
+				};
+				// ------------------------
 				// STEPS
 				// ------------------------
 				let STEP4 = () => {
-					// ------------------------
-					// ANIMATION
-					// ------------------------
-					const animate = function () {
-						requestAnimationFrame(animate);
-						// SUN.move()
-						_GLTFLoader.rotTankBase()
-						if (typeof orbitControls === 'object' && orbitControls.active === true) {
-							orbitControls.update()
-						}
-						// scene.rotation.y += 0.01; // Rotate the scene for some dynamics
-						renderer.render(scene, camera);
-					};
-					// ------------------------
-					// SCENE CREATION
-					// ------------------------
-					let scene = new THREE.Scene();
-					scene.name = 'lv0';
-					console.log('0', scene)
-					// ------------------------
-					// ROOM (décor)
-					// ------------------------
-					let room = new THREE.LineSegments(new BoxLineGeometry(100, 100, 100, 20, 20, 20), new THREE.LineBasicMaterial({ color: 0xbcbcbc }));
-					scene.add(room);
-					// ------------------------
-					// AMBIENT light
-					// ------------------------
-					const ambientLight = new THREE.AmbientLight(0xFFFFFF, 1); // soft white light
-					scene.add(ambientLight);
-					// ------------------------
-					// SUN light
-					// ------------------------
-					const SUN = new THREE.DirectionalLight(0xffffff, 2);
-					const SUNhelper = new THREE.DirectionalLightHelper(SUN, 5);
-					SUN.name = 'SUN';
-					SUN.userData.d = 10;
-					SUN.userData.amplitude = { range: 3, sens: 1 }
-					SUN.position.set(0, 5, 0);
-					SUN.shadow.mapSize.width = 1024; // default
-					SUN.shadow.mapSize.height = 1024; // default
-					SUN.shadow.camera.near = 2; // default
-					SUN.shadow.camera.far = 50; // default
-					SUN.shadow.camera.left = -SUN.userData.d;
-					SUN.shadow.camera.right = SUN.userData.d;
-					SUN.shadow.camera.top = SUN.userData.d;
-					SUN.shadow.camera.bottom = -SUN.userData.d;
-					SUN.castShadow = true
-					const SunCubeGeometry = new THREE.BoxGeometry(.1, .1, .1);
-					const SunCubeMaterial = new THREE.MeshPhongMaterial({ color: 0xFFFFFF });
-					const SunCube = new THREE.Mesh(SunCubeGeometry, SunCubeMaterial);
-					SunCube.position.set(0, SUN.position.y + 2, 0);
-					// SUN.add(SunCube)
-					SUN.animate = () => {
-						let sungo = setInterval(() => {
-							SUN.move()
-						}, 100)
-					}
-					SUN.move = () => {
-						if (SUN.position.x >= SUN.userData.amplitude.range) SUN.userData.amplitude.sens = -1;
-						if (SUN.position.x <= -SUN.userData.amplitude.range) SUN.userData.amplitude.sens = 1;
-						SUN.position.x = SUN.position.x + (SUN.userData.amplitude.sens * 0.01)
-						// console.log('SUN.move:', SUN.position.x)
-					}
-					SUN.starter = function () {
-						// this.animate()
-						console.log(this)
-						return this
-					}
-					scene.add(SUNhelper);
-					scene.add(SUN.starter());
-					// ------------------------
-					// POINT light
-					// ------------------------
-					const pointLight1 = new THREE.PointLight(0xff0000, 3, 100);
-					pointLight1.position.set(2, 1, 2);
-					const pointLight2 = new THREE.PointLight(0xffffff, 3, 100);
-					pointLight2.position.set(-2, 1, -2);
-					scene.add(pointLight2);
-					scene.add(pointLight1);
 					// ------------------------
 					// FLOOR
 					// ------------------------
@@ -127,44 +190,10 @@
 					floor.position.y = -1;
 					scene.add(floor);
 					// ------------------------
-					// MESS
+					// ADD MODELS
 					// ------------------------
-					// const cubeGeometry = new THREE.BoxGeometry(1, 1, 1);
-					// const cubeMaterial = new THREE.MeshStandardMaterial({ color: 0xFFFFFF });
-					// const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
-					// cube.castShadow = true;
-					// cube.receiveShadow = true
-					// // cube.rotation.x = -Math.PI / 2;
-					// cube.position.y = 1;
-					// scene.add(cube);
-					// // const cube2 = cube.clone();
-					// const cube2Geometry = new THREE.BoxGeometry(.3, .3, .3);
-					// const cube2 = new THREE.Mesh(cube2Geometry, cubeMaterial);
-					// cube2.castShadow = true;
-					// cube2.receiveShadow = true
-					// cube2.position.y = 1.7;
-					// scene.add(cube, cube2);
-					// ------------------------
-					// CAMERA
-					// ------------------------
-					const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 1000);
-					camera.position.z = 5;
-					camera.position.y = 3;
-					camera.lookAt({ x: 0, y: 0, z: 0 })
-					// ------------------------
-					// RENDERER
-					// ------------------------
-					const renderer = new THREE.WebGLRenderer({
-						antialias: true,
-						alpha: true
-					});
-					renderer.shadowMap.enabled = true;
-					renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-					renderer.setSize(window.innerWidth, window.innerHeight);
-					renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-					renderer.setClearColor(0x000010, 1.0);
-					document.body.appendChild(renderer.domElement);
-					_GLTFLoader.addModelsToScene(scene)
+					PlayerStuff.init()
+
 					orbitControls.init(camera, renderer)
 
 					renderer.render(scene, camera);

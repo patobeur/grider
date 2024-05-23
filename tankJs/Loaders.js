@@ -12,27 +12,30 @@ let _GLTFLoader = {
 	modelsActive: {},
 	loadCounter: 0,
 	list: [
-		{ name: 'tank0', file: '/gltf/tank/BW/tank_1_bw.glb', position: { x: -2, y: 1, z: 0 } },
-		{ name: 'tank1', file: '/gltf/tank/GREEN/tank_1_green.glb', position: { x: 0, y: 1, z: 0 } },
-		{ name: 'tank2', file: '/gltf/tank/A/tankk.gltf', position: { x: 2, y: 1, z: 0 } },
+		{ name: 'tank0', file: '/assets/gltf/tank/BW/tank_1_bw.glb', position: { x: -2, y: 0, z: -4 } },
+		{ name: 'tank1', file: '/assets/gltf/tank/GREEN/tank_1_green.glb', position: { x: 0, y: 0, z: -4 } },
+		{ name: 'tank2', file: '/assets/gltf/tank/A/tankk.gltf', position: { x: 2, y: 0, z: -4 } },
 	],
 	addModelsToScene: function (scene) {
-		// for (const key in this.models) { scene.add(this.models[key].clone()); }
-		this.modelsActive['tank0'] = this.models['tank0'].clone()
-		scene.add(this.modelsActive['tank0']);
-		this.modelsActive['tank1'] = this.models['tank1'].clone()
-		scene.add(this.modelsActive['tank1']);
-		this.modelsActive['tank2'] = this.models['tank2'].clone()
-		scene.add(this.modelsActive['tank2']);
+		for (const key in this.models) {
+			scene.add(this.models[key]
+			);
+		}
+		// this.modelsActive['tank0'] = this.models['tank0'].clone()
+		// scene.add(this.modelsActive['tank0']);
+		// this.modelsActive['tank1'] = this.models['tank1'].clone()
+		// scene.add(this.modelsActive['tank1']);
+		// this.modelsActive['tank2'] = this.models['tank2'].clone()
+		// scene.add(this.modelsActive['tank2']);
 	},
 	rotTankBase: function (name = 'tank2') {
-		this.modelsActive.tank0.children[0].children[3].rotation.y += 0.01
-		this.modelsActive.tank0.children[0].rotation.y -= 0.01
+		this.models.tank0.children[0].children[3].rotation.y += 0.01
+		this.models.tank0.children[0].rotation.y -= 0.01
 
-		this.modelsActive[name].children[0].children[3].rotation.y += 0.01
-		this.modelsActive[name].children[0].rotation.y += 0.009
+		this.models.tank2.children[0].children[3].rotation.y += 0.01
+		this.models.tank2.children[0].rotation.y += 0.009
 
-		this.modelsActive.tank1.children[0].children[3].rotation.y -= 0.01
+		this.models.tank1.children[0].children[3].rotation.y -= 0.01
 	},
 	init: function (callbackFunction = this.callback) {
 		// if (typeof callbackFunction === 'function') callbackFunction = this.callback;
@@ -44,6 +47,8 @@ let _GLTFLoader = {
 					this.loadCounter++;
 					const model = gltf.scene;
 					model.position.x = element.position.x;
+					model.position.z = element.position.z;
+					model.position.y = element.position.y;
 					model.traverse((node) => {
 						if (node.isMesh) {
 							node.receiveShadow = true
@@ -51,7 +56,7 @@ let _GLTFLoader = {
 						}
 					});
 					this.models[element.name] = model
-					console.log('mesh loaded ', element.name, model);
+					console.log('Model ' + element.name + ' loaded', model);
 					if (this.loadCounter === this.list.length) callbackFunction();
 				}, undefined, (error) => {
 					console.error('_GLTFLoader', error);
@@ -66,7 +71,7 @@ let _TextureLoader = {
 	counter: 0,
 	textureLoader: new THREE.TextureLoader(),
 	files: [
-		{ name: 'floor2', path: '/textures/', fileName: 'sol_hr.jpg' }
+		{ name: 'floor2', path: '/assets/textures/', fileName: 'sol_hr.jpg' }
 	],
 	init: function (callbackFunction = this.callback) {
 		this.callbackFunction = callbackFunction
