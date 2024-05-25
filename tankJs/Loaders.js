@@ -6,15 +6,17 @@ let _GLTFLoader = {
 	// GLTFLoader for GLTF MESH
 	// ------------------------
 	active: false,
-	callback: () => { console.log('no call back function for _GLTFLoader') },
+	consoleOn: false,
+	callback: () => { if (this.consoleOn) console.log('no call back function for _GLTFLoader') },
 	gltfLoader: undefined,
 	models: {},
 	modelsActive: {},
 	loadCounter: 0,
 	list: [
-		{ name: 'tank0', file: '/assets/gltf/tank/BW/tank_1_bw.glb', position: { x: -2, y: 0, z: -4 } },
-		{ name: 'tank1', file: '/assets/gltf/tank/GREEN/tank_1_green.glb', position: { x: 0, y: 0, z: -4 } },
-		{ name: 'tank2', file: '/assets/gltf/tank/A/tankk.gltf', position: { x: 2, y: 0, z: -4 } },
+		{ name: 'tank0', file: '/assets/gltf/tank/A/tank_black.gltf', position: { x: -2, y: 0, z: -4 } },
+		{ name: 'tank1', file: '/assets/gltf/tank/A/tank_white.gltf', position: { x: 0, y: 0, z: -4 } },
+		{ name: 'tank2', file: '/assets/gltf/tank/A/tank_red.gltf', position: { x: 2, y: 0, z: -4 } },
+		{ name: 'tank3', file: '/assets/gltf/tank/A/tank_green.gltf', position: { x: 4, y: 0, z: -4 } },
 	],
 	addModelsToScene: function (scene) {
 		for (const key in this.models) {
@@ -56,7 +58,7 @@ let _GLTFLoader = {
 						}
 					});
 					this.models[element.name] = model
-					console.log('Model ' + element.name + ' loaded', model);
+					if (this.consoleOn) console.log('Model ' + element.name + ' loaded', model);
 					if (this.loadCounter === this.list.length) callbackFunction();
 				}, undefined, (error) => {
 					console.error('_GLTFLoader', error);
@@ -66,7 +68,7 @@ let _GLTFLoader = {
 	}
 }
 let _TextureLoader = {
-	callback: () => { console.log('no call back function for _TextureLoader') },
+	callback: () => { if (this.consoleOn) console.log('no call back function for _TextureLoader') },
 	textures: {},
 	counter: 0,
 	textureLoader: new THREE.TextureLoader(),
@@ -92,7 +94,7 @@ let _TextureLoader = {
 			this.counter++;
 			map.name = file.name
 			this.textures[file.name] = { map: map, name: file.name }
-			console.log('texture loaded', file.fileName, this.counter + '/' + this.files.length)
+			if (this.consoleOn) console.log('texture loaded', file.fileName, this.counter + '/' + this.files.length)
 			this.checkEnd()
 		});
 	},
@@ -109,7 +111,7 @@ let _TextureLoader = {
 				// Progression du chargement de la texture (optionnel)
 				const percentLoaded = (xhr.loaded / xhr.total) * 100;
 				// this.texturesDivByName[file.name].style.width = (100 - percentLoaded) + '%'
-				console.log('Texture chargée :' + `${percentLoaded}% ${file.fileName} `);
+				if (this.consoleOn) console.log('Texture chargée :' + `${percentLoaded}% ${file.fileName} `);
 			},
 			(error) => {
 				console.error('Erreur de chargement de la texture :', error);

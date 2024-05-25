@@ -10,6 +10,27 @@
 				overflow: hidden;
 				margin: 0px;
 			}
+
+			#menuPanel {
+				position: absolute;
+				background-color: rgba(255, 255, 255, 0.25);
+				top: 0px;
+				left: 0px;
+				width: 100%;
+				height: 100%;
+			}
+
+			#startButton {
+				height: 50px;
+				width: 200px;
+				margin: -25px -100px;
+				position: relative;
+				top: 50%;
+				left: 50%;
+				font-size: 32px;
+				background-color: rgba(255, 255, 255, 1);
+				text-align: center;
+			}
 		</style>
 	</head>
 
@@ -27,23 +48,24 @@
 			"use strict";
 			import * as THREE from "three";
 			import { BoxLineGeometry } from 'three/addons/geometries/BoxLineGeometry.js';
-			import { clone } from 'three/addons/utils/SkeletonUtils.js';
-			import { orbitControls } from '/tankJs/OrbitControls.js'
+			import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 			import { _GLTFLoader, _TextureLoader } from '/tankJs/Loaders.js'
+			import { clone } from 'three/addons/utils/SkeletonUtils.js';
 			let initWorld = (Ammo) => {
+				let consoleOn = false;
 				// ------------------------
 				// SCENE CREATION
 				// ------------------------
 				let scene = new THREE.Scene();
 				scene.name = 'lv0';
-				console.log('0', scene)
+				if (consoleOn) console.log('0', scene)
 				// ------------------------
 				// CAMERA
 				// ------------------------
 				const camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 1000);
 				camera.position.z = 5;
-				camera.position.y = 3;
-				camera.lookAt({ x: 0, y: 0, z: 0 })
+				camera.position.y = 1;
+				camera.lookAt(new THREE.Vector3(0, 0, 0))
 				// ------------------------
 				// RENDERER
 				// ------------------------
@@ -99,11 +121,11 @@
 					if (SUN.position.x >= SUN.userData.amplitude.range) SUN.userData.amplitude.sens = -1;
 					if (SUN.position.x <= -SUN.userData.amplitude.range) SUN.userData.amplitude.sens = 1;
 					SUN.position.x = SUN.position.x + (SUN.userData.amplitude.sens * 0.01)
-					// console.log('SUN.move:', SUN.position.x)
+					// if (consoleOn) console.log('SUN.move:', SUN.position.x)
 				}
 				SUN.starter = function () {
 					// this.animate()
-					console.log(this)
+					if (consoleOn) console.log(this)
 					return this
 				}
 				scene.add(SUNhelper);
@@ -142,36 +164,204 @@
 					requestAnimationFrame(animate);
 					SUN.move()
 					_GLTFLoader.rotTankBase()
+
+					PlayerStuff.checkMoves()
+
 					if (typeof orbitControls === 'object' && orbitControls.active === true) {
 						orbitControls.update()
 					}
-					// scene.rotation.y += 0.01; // Rotate the scene for some dynamics
 					renderer.render(scene, camera);
 				};
-
+				// ------------------------
+				// PLAYER
+				// ------------------------
 				let PlayerStuff = {
 					playerModel: undefined,
-					init: function () {
-						// this.playerModel = _GLTFLoader.models
-						_GLTFLoader.addModelsToScene(scene)
-						let tempoMesh = _GLTFLoader.models.tank2
-						this.playerModel = clone(tempoMesh)
+					playerTurret: undefined,
+					pointerLocked: true,
+					engineSpeed: { current: 0, min: -5, max: 5 },
+					euler: new THREE.Euler(),
+					quaternion: new THREE.Quaternion(),
+					moveForward: false,
+					moveBackward: false,
+					turnLeft: false,
+					turnRight: false,
+					keyMap: {
+						KeyW: false,
+						KeyS: false,
+						KeyA: false,
+						KeyD: false,
+					},
+					keys: {
 
-						// SkeletonUtils.clone(), 
-						// this.playerModel.name = 'playerOne'
-						console.log(this.playerModel)
-						this.playerModel.children[0].material.color.r = 0
-						this.playerModel.children[0].material.color.g = 0
-						this.playerModel.children[0].material.color.b = 0.2
-						this.playerModel.children[0].children[3].material.color.r = 1
-						this.playerModel.children[0].children[3].material.color.g = 1
-						this.playerModel.children[0].children[3].material.color.b = 1
+					},
+					// ------------------------
+					// CAMERA PIVOT TURRET
+					// ------------------------
+					directionVectorTuret: new THREE.Vector3(),
+					pivot: new THREE.Object3D(),
+					yaw: new THREE.Object3D(),
+					pitch: new THREE.Object3D(),
+					//-----------------
+					onDocumentMouseMove: function (e) {
+						PlayerStuff.yaw.rotation.y -= e.movementX * 0.002;
+						const v = PlayerStuff.pitch.rotation.x - e.movementY * 0.002;
+						if (v > -1 && v < 0.1) {
+							PlayerStuff.pitch.rotation.x = v;
+						}
+						PlayerStuff.directionVectorTuret = PlayerStuff.yaw.rotation.y + Math.PI
+						// console.log(PlayerStuff.pitch.rotation.x)
+
+						PlayerStuff.playerModel.children[0].children[3].rotation.y = PlayerStuff.directionVectorTuret
+						return false;
+					},
+					onDocumentMouseWheel: function (e) {
+						// if (consoleOn) console.log(camera)
+						// const v = camera.position.z + e.deltaY * 0.005;
+						// if (v >= 2 && v <= 10) {
+						// 	camera.position.z = v;
+						// }
+						// return false;
+					},
+					checkMoves: function () {
+
+						if (PlayerStuff.turnLeft) {
+							PlayerStuff.playerModel.rotation.y += 0.05;
+						} else if (PlayerStuff.turnRight) {
+							PlayerStuff.playerModel.rotation.y -= 0.05;
+						}
+						if (PlayerStuff.moveBackward) {
+							PlayerStuff.playerModel.translateZ(0.1); // 
+						} else if (PlayerStuff.moveForward) {
+							PlayerStuff.playerModel.translateZ(-0.1); // 
+						}
+					},
+					engine: function (e) {
+						console.log(PlayerStuff.engineSpeed)
+					},
+					onDocumentKey: function (e) {
+						console.log(e.code)
+						if (e.type === "keydown" || e.type === "keyup") {
+							PlayerStuff.keyMap[e.code] = e.type === "keydown";
+						}
+						if (PlayerStuff.pointerLocked) {
+							PlayerStuff.moveForward = PlayerStuff.keyMap["KeyW"];
+							PlayerStuff.moveBackward = PlayerStuff.keyMap["KeyS"];
+							PlayerStuff.turnLeft = PlayerStuff.keyMap["KeyA"];
+							PlayerStuff.turnRight = PlayerStuff.keyMap["KeyD"];
+							console.log(PlayerStuff.keyMap)
+						}
+					},
+					set_cameraPivot: function () {
+						// PlayerStuff.pivot.position.set(0, 1, 3);
+						// PlayerStuff.pivot.position = _scene.camera.positions
+						PlayerStuff.pivot.add(PlayerStuff.yaw);
+						PlayerStuff.yaw.add(PlayerStuff.pitch);
+						PlayerStuff.pitch.add(camera);
+						PlayerStuff.pivot.position.set(0, 1, -5); // Ajustez la position du pivot pour être devant le canon du tank
+						PlayerStuff.playerModel.add(PlayerStuff.pivot);
+
+						// scene.add(PlayerStuff.pivot)
+					},
+					pointerManager: function () {
+						document.addEventListener("pointerlockchange", () => {
+							if (document.pointerLockElement === renderer.domElement) {
+								PlayerStuff.pointerLocked = true;
+
+								PlayerStuff.startButton.style.display = "none";
+								PlayerStuff.menuPanel.style.display = "none";
+
+								document.addEventListener("keydown", PlayerStuff.onDocumentKey, false);
+								document.addEventListener("keyup", PlayerStuff.onDocumentKey, false);
+
+								renderer.domElement.addEventListener("mousemove", PlayerStuff.onDocumentMouseMove, false);
+								renderer.domElement.addEventListener("wheel", PlayerStuff.onDocumentMouseWheel, false);
+							} else {
+								PlayerStuff.pointerLocked = false;
+
+								PlayerStuff.menuPanel.style.display = "block";
+
+								document.removeEventListener("keydown", PlayerStuff.onDocumentKey, false);
+								document.removeEventListener("keyup", PlayerStuff.onDocumentKey, false);
+
+								renderer.domElement.removeEventListener(
+									"mousemove",
+									PlayerStuff.onDocumentMouseMove,
+									false
+								);
+								renderer.domElement.removeEventListener(
+									"wheel",
+									PlayerStuff.onDocumentMouseWheel,
+									false
+								);
+
+								setTimeout(() => {
+									PlayerStuff.startButton.style.display = "block";
+								}, 1000);
+							}
+						});
+					},
+					panelManager: function () {
+						this.menuPanel = document.createElement('div')
+						this.startButton = document.createElement('div')
+						this.menuPanel.id = 'menuPanel'
+						this.startButton.id = 'startButton'
+						this.startButton.textContent = 'startButton'
+						this.menuPanel.appendChild(this.startButton)
+						document.body.appendChild(this.menuPanel)
+						this.startButton.addEventListener(
+							"click",
+							() => {
+								renderer.domElement.requestPointerLock();
+							},
+							false
+						);
+					},
+					init: function () {
+						// _GLTFLoader.addModelsToScene(scene)
+						this.playerModel = clone(_GLTFLoader.models.tank1)
+						this.playerTurret = this.playerModel.children[0].children[3]
+
 						this.playerModel.position.set(0, 0, 0)
+						if (consoleOn) console.log(this.playerModel)
+						// this.playerModel.name = 'playerOne'
+						this.playerModel.children[0].material.color.r = 1
+						this.playerModel.children[0].material.color.g = 0
+						this.playerModel.children[0].material.color.b = 0
+						this.playerModel.children[0].children[3].material.color.r = 1
+						this.playerModel.children[0].children[3].material.color.g = 0
+						this.playerModel.children[0].children[3].material.color.b = 1
+
 						scene.add(this.playerModel)
-						console.log('playerModel', this.playerModel)
+						if (consoleOn) console.log('playerModel', this.playerModel)
+
+						this.set_cameraPivot()
+						this.panelManager()
+						this.pointerManager()
+
 					}
 
 				};
+				let orbitControls = {
+					active: false,
+					controls: undefined,
+					init: function (camera, renderer) {
+						this.controls = new OrbitControls(camera, renderer.domElement)
+						this.controls.enablePan = false;
+						this.controls.maxPolarAngle = Math.PI / 2;
+						this.controls.minDistance = 2;
+						this.controls.maxDistance = camera.position.z * 2;
+						// plus de vitesse ou de smooth
+						this.controls.enableDamping = true;
+						this.controls.dampingFactor = 0.09;
+						// this.controls.autoRotate = true;
+						// this.controls.enableRotate = false;
+						this.active = true;
+						// this.controls.update();
+					},
+					update: function () { this.controls.update(); }
+				}
+
 				// ------------------------
 				// STEPS
 				// ------------------------
@@ -192,6 +382,7 @@
 					// ------------------------
 					// ADD MODELS
 					// ------------------------
+					_GLTFLoader.addModelsToScene(scene)
 					PlayerStuff.init()
 
 					orbitControls.init(camera, renderer)
