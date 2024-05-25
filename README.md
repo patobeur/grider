@@ -1,5 +1,7 @@
 # Griders
 
+npm install
+
 this are parts of the project
 
 server with socketIo
