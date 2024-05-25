@@ -140,9 +140,10 @@ let _scene = {
 	// ------------------------
 	set_camera: function () {
 		this.camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 1000);
-		this.camera.position.z = 20;
-		this.camera.position.y = 1;
-		this.camera.lookAt(new THREE.Vector3(0, 0, 0))
+		this.camera.name = 'first'
+		// this.camera.position.z = 20;
+		// this.camera.position.y = 1;
+		// this.camera.lookAt(new THREE.Vector3(0, 0, 0))
 	},
 	// ------------------------
 	// RENDERER
@@ -240,6 +241,13 @@ let _scene = {
 		cube3.position.set(5, 0, -5);
 		cube4.position.set(5, 0, 5);
 		this.scene.add(cube, cube2, cube3, cube4);
+
+
+		this.cubepitch = new THREE.Mesh(new THREE.BoxGeometry(5, 1, .1), new THREE.MeshPhongMaterial({ color: 0xFF0000 }));
+		this.cubeyaw = new THREE.Mesh(new THREE.BoxGeometry(2, .2, 2), new THREE.MeshPhongMaterial({ color: 0x00FF00 }));
+		this.cubepivot = new THREE.Mesh(new THREE.BoxGeometry(.05, .2, 3), new THREE.MeshPhongMaterial({ color: 0x0000ff }));
+		this.scene.add(this.cubepivot, this.cubeyaw, this.cubepitch)
+
 		// // const cube2 = cube.clone();
 		// const cube2Geometry = new THREE.BoxGeometry(.3, .3, .3);
 		// const cube2 = new THREE.Mesh(cube2Geometry, cubeMaterial);

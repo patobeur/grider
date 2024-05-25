@@ -48,59 +48,124 @@
 			"use strict";
 			import * as THREE from "three";
 			import { _GLTFLoader, _TextureLoader, _scene } from '/assets/Loaders.js'
-			import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
+			// 
 			import { clone } from 'three/addons/utils/SkeletonUtils.js';
+			import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+			let _OrbitControls = {
+				active: false,
+				controls: undefined,
+				// ------------------------
+				// CAMERA PIVOT TURRET
+				// ------------------------
+				cameraDirectionVector: new THREE.Vector3(),
+				pivot: new THREE.Object3D(),
+				yaw: new THREE.Object3D(),
+				pitch: new THREE.Object3D(),
+				// ------------------------
+				// INIT
+				// ------------------------
+				init: function (camera, renderer, PlayerStuff) {
+
+					console.log(PlayerStuff)
+					this.PlayerStuff = PlayerStuff
+					this.camera = camera
+					camera.position.z = 5
+					// camera.position.y = .5
+					// camera.position.x = 0
+					camera.lookAt(new THREE.Vector3(0, 0, 0))
+					this.PlayerStuff.playerTurret.rotation.y = Math.PI / 2
+					this.PlayerStuff.playerTurret.add(camera)
+					// this.controls = new OrbitControls(camera, renderer.domElement)
+					// this.controls.enablePan = false;
+					// // this.controls.target.copy(this.pivot.position); // Cible initiale fixée au pivot
+					// this.controls.maxPolarAngle = Math.PI / 2;
+					// this.controls.minDistance = 5;
+					// this.controls.maxDistance = 20;
+					// // // plus de vitesse ou de smooth
+					// // this.controls.enableDamping = true;
+					// // this.controls.dampingFactor = 0.09;
+					// // this.controls.autoRotate = true;
+					// // this.controls.enableRotate = false;
+					// this.active = true;
+					// this.set_cameraPivot(camera)
+					// this.controls.update();
+				},
+				// set_cameraPivot: function (camera) {
+
+				// 	this.yaw.add(this.pitch);
+				// 	this.pivot.add(this.yaw);// La caméra est ajoutée à `yaw` qui est déjà ajouté à `pivot`
+				// 	this.pivot.position.set(0, 1, -5); // Ajustez la position du pivot pour être devant le canon du tank
+				// 	this.pitch.add(camera);  // Et la caméra est ajoutée à `pitch` qui est déjà ajouté à `yaw`
+				// 	// this.PlayerStuff.playerTurret.add(camera);
+				// },
+				update: function () {
+					if (this.active === true) this.controls.update();
+					// console.log('yaw', this.yaw.rotation)
+					// console.log('pivot', this.pivot.rotation)
+					// console.log('pitch', this.pitch.rotation)
+					_scene.cubepivot.position.set(this.PlayerStuff.playerModel.position.x, this.PlayerStuff.playerModel.position.y, this.PlayerStuff.playerModel.position.z)
+					_scene.cubeyaw.position.set(this.PlayerStuff.playerModel.position.x, this.PlayerStuff.playerModel.position.y, this.PlayerStuff.playerModel.position.z)
+					_scene.cubepitch.position.set(this.PlayerStuff.playerModel.position.x, this.PlayerStuff.playerModel.position.y, this.PlayerStuff.playerModel.position.z)
+					_scene.cubepivot.rotation.set(this.PlayerStuff.playerModel.rotation.x, this.PlayerStuff.playerModel.rotation.y, this.PlayerStuff.playerModel.rotation.z)
+					// _scene.cubeyaw.rotation.set(this.yaw.rotation.x, this.yaw.rotation.y, this.yaw.rotation.z)
+					// _scene.cubepitch.rotation.set(this.pitch.rotation.x, this.pitch.rotation.y, this.pitch.rotation.z)
+
+					// this.yaw.position.set(this.PlayerStuff.playerModel.position.x, this.PlayerStuff.playerModel.position.y, this.PlayerStuff.playerModel.position.z)
+					// this.pitch.position.set(this.pivot.position.x, this.pivot.position.y, this.pivot.position.z)
+				},
+
+				//-----------------
+				//-----------------
+				onDocumentMouseMove: function (e) {
+					_OrbitControls.yaw.rotation.y -= e.movementX * 0.002;
+					// const v = _OrbitControls.pitch.rotation.x - e.movementY * 0.002;
+					// // if (v > -1 && v < 0.1) {
+					// _OrbitControls.pitch.rotation.x = v;
+					// // }
+					_OrbitControls.cameraDirectionVector = _OrbitControls.yaw.rotation.y;
+
+					_OrbitControls.PlayerStuff.playerTurret.rotation.y = _OrbitControls.cameraDirectionVector;
+					// camera.lookAt(PlayerStuff.playerModel.position); // Assurez-vous que la caméra regarde toujours le modèle du joueur
+
+
+					// const y = _OrbitControls.camera.position.y + e.deltaY * 0.005;
+					// if (y >= 2 && y <= 10) {
+					// 	_OrbitControls.camera.position.y = y;
+					// }
+					return false;
+				},
+				onDocumentMouseWheel: function (e) {
+					// const v = _OrbitControls.camera.position.y + e.deltaY * 0.005;
+					// if (v >= 2 && v <= 10) {
+					// 	_OrbitControls.camera.position.y = v;
+					// }
+					return false;
+				},
+
+
+			}
 			let initWorld = (Ammo) => {
 				let root = '';
 				_scene.init()
 				let scene = _scene.scene
 				let camera = _scene.camera
 				let renderer = _scene.renderer
+				let cubepivot = _scene.cubepivot
 				// ------------------------
 				// ANIMATION
 				// ------------------------
 				const animate = function () {
 					requestAnimationFrame(animate);
 					_scene.SUN.move()
-					if (_GLTFLoader.demoActive === true) _GLTFLoader.rotTankBase()
+					// if (_GLTFLoader.demoActive === true) _GLTFLoader.rotTankBase()
 
 					PlayerStuff.checkMoves()
 
-					if (typeof orbitControls === 'object') orbitControls.update();
+					if (typeof _OrbitControls === 'object') _OrbitControls.update();
 
 					renderer.render(scene, camera);
 				};
-				let orbitControls = {
-					active: false,
-					controls: undefined,
-					init: function (camera, renderer) {
-						this.controls = new OrbitControls(camera, renderer.domElement)
-						this.controls.enablePan = false;
-						this.controls.target.copy(PlayerStuff.pivot.position); // Cible initiale fixée au pivot
-						this.controls.maxPolarAngle = Math.PI / 2;
-						this.controls.minDistance = 2;
-						this.controls.maxDistance = 50;
-						// plus de vitesse ou de smooth
-						// this.controls.enableDamping = true;
-						// this.controls.dampingFactor = 0.09;
-						// this.controls.autoRotate = true;
-						// this.controls.enableRotate = false;
-						this.active = true;
-						this.controls.update();
-					},
-					set_cameraPivot: function () {
-
-
-						PlayerStuff.pitch.add(camera);  // Et la caméra est ajoutée à `pitch` qui est déjà ajouté à `yaw`
-						PlayerStuff.pivot.add(PlayerStuff.yaw);// La caméra est ajoutée à `yaw` qui est déjà ajouté à `pivot`
-						PlayerStuff.pivot.position.set(0, 1, -5); // Ajustez la position du pivot pour être devant le canon du tank
-						PlayerStuff.yaw.add(PlayerStuff.pitch);
-					},
-					update: function () {
-						if (orbitControls.active === true) this.controls.update();
-					}
-
-				}
 				// ------------------------
 				// PLAYER
 				// ------------------------
@@ -108,9 +173,8 @@
 					playerModel: undefined,
 					playerTurret: undefined,
 					pointerLocked: true,
-					engineSpeed: { current: 0, min: -5, max: 5 },
-					euler: new THREE.Euler(),
-					quaternion: new THREE.Quaternion(),
+					// euler: new THREE.Euler(),
+					// quaternion: new THREE.Quaternion(),
 					moveForward: false,
 					moveBackward: false,
 					turnLeft: false,
@@ -124,48 +188,7 @@
 					keys: {
 
 					},
-					// ------------------------
-					// CAMERA PIVOT TURRET
-					// ------------------------
-					directionVectorTuret: new THREE.Vector3(),
-					pivot: new THREE.Object3D(),
-					yaw: new THREE.Object3D(),
-					pitch: new THREE.Object3D(),
-					//-----------------
-					//-----------------
-					onDocumentMouseMove: function (e) {
-						PlayerStuff.yaw.rotation.y -= e.movementX * 0.002;
-						const v = PlayerStuff.pitch.rotation.x - e.movementY * 0.002;
-						if (v > -1 && v < 0.1) {
-							PlayerStuff.pitch.rotation.x = v;
-						}
-						PlayerStuff.directionVectorTuret = PlayerStuff.yaw.rotation.y + Math.PI;
 
-						PlayerStuff.playerModel.children[0].children[3].rotation.y = PlayerStuff.directionVectorTuret;
-						// camera.lookAt(PlayerStuff.playerModel.position); // Assurez-vous que la caméra regarde toujours le modèle du joueur
-						return false;
-					},
-					onDocumentMouseWheel: function (e) {
-						console.log(camera)
-						// const v = camera.position.z + e.deltaY * 0.005;
-						// if (v >= 2 && v <= 10) {
-						// 	camera.position.z = v;
-						// }
-						// return false;
-					},
-					checkMoves2: function () {
-						if (PlayerStuff.turnLeft) {
-							PlayerStuff.playerModel.rotation.y += 0.05;
-						} else if (PlayerStuff.turnRight) {
-							PlayerStuff.playerModel.rotation.y -= 0.05;
-						}
-						if (PlayerStuff.moveBackward) {
-							PlayerStuff.playerModel.translateZ(-0.1); // 
-						} else if (PlayerStuff.moveForward) {
-							PlayerStuff.playerModel.translateZ(0.1); // 
-						}
-						this.pivot.position.copy(this.playerModel.position);  // Assure que le pivot suit la position du tank
-					},
 					checkMoves: function () {
 						if (this.turnLeft) {
 							this.playerModel.rotation.y += 0.05;
@@ -177,14 +200,16 @@
 						} else if (this.moveForward) {
 							this.playerModel.translateZ(0.1);
 						}
+						if (typeof _OrbitControls.controls === 'object') {
 
-						// Mise à jour de la position et de la rotation du pivot pour suivre le tank
-						this.pivot.position.copy(this.playerModel.position);
-						this.pivot.rotation.copy(this.playerModel.rotation);
+							// // Mise à jour de la position et de la rotation du pivot pour suivre le tank
+							_OrbitControls.pivot.position.copy(PlayerStuff.playerModel.position);
+							_OrbitControls.pivot.rotation.copy(PlayerStuff.playerModel.rotation);
 
-						// Assurer que les contrôles de la caméra sont correctement mis à jour avec la nouvelle position du pivot
-						orbitControls.controls.target.copy(this.pivot.position);
-						orbitControls.controls.update();
+							// // Assurer que les contrôles de la caméra sont correctement mis à jour avec la nouvelle position du pivot
+							_OrbitControls.controls.target.copy(_OrbitControls.pivot.position);
+							_OrbitControls.controls.update();
+						}
 					},
 
 					onDocumentKey: function (e) {
@@ -211,8 +236,8 @@
 								document.addEventListener("keydown", PlayerStuff.onDocumentKey, false);
 								document.addEventListener("keyup", PlayerStuff.onDocumentKey, false);
 
-								renderer.domElement.addEventListener("mousemove", PlayerStuff.onDocumentMouseMove, false);
-								renderer.domElement.addEventListener("wheel", PlayerStuff.onDocumentMouseWheel, false);
+								renderer.domElement.addEventListener("mousemove", _OrbitControls.onDocumentMouseMove, false);
+								renderer.domElement.addEventListener("wheel", _OrbitControls.onDocumentMouseWheel, false);
 							} else {
 								PlayerStuff.pointerLocked = false;
 
@@ -223,12 +248,12 @@
 
 								renderer.domElement.removeEventListener(
 									"mousemove",
-									PlayerStuff.onDocumentMouseMove,
+									_OrbitControls.onDocumentMouseMove,
 									false
 								);
 								renderer.domElement.removeEventListener(
 									"wheel",
-									PlayerStuff.onDocumentMouseWheel,
+									_OrbitControls.onDocumentMouseWheel,
 									false
 								);
 
@@ -266,15 +291,15 @@
 						this.playerModel.children[0].material.color.r = 1
 						this.playerModel.children[0].material.color.g = 0
 						this.playerModel.children[0].material.color.b = 0
-						this.playerModel.children[0].children[3].material.color.r = 1
-						this.playerModel.children[0].children[3].material.color.g = 0
-						this.playerModel.children[0].children[3].material.color.b = 1
+						this.playerTurret.material.color.r = 1
+						this.playerTurret.material.color.g = 0
+						this.playerTurret.material.color.b = 1
 
 						scene.add(this.playerModel)
 
-						orbitControls.set_cameraPivot()
 						this.panelManager()
 						this.pointerManager()
+						// orbitControls.set_cameraPivot()
 
 					}
 
@@ -300,8 +325,9 @@
 					// ------------------------
 					_GLTFLoader.addModelsToScene(scene)
 					PlayerStuff.init()
+					_OrbitControls.init(camera, renderer, PlayerStuff)
 
-					orbitControls.init(camera, renderer)
+					// orbitControls.init(camera, renderer)
 
 					renderer.render(scene, camera);
 
