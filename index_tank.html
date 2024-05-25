@@ -320,10 +320,12 @@
 					init: function () {
 						// _GLTFLoader.addModelsToScene(scene)
 						this.playerModel = clone(_GLTFLoader.models.tank1)
+
 						this.playerTurret = this.playerModel.children[0].children[3]
 
 						this.playerModel.position.set(0, 0, 0)
 						if (consoleOn) console.log(this.playerModel)
+
 						// this.playerModel.name = 'playerOne'
 						this.playerModel.children[0].material.color.r = 1
 						this.playerModel.children[0].material.color.g = 0
