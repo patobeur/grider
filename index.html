@@ -165,9 +165,12 @@
 					this.playerModel = clone(_GLTFLoader.models.tank1)
 					this.playerSkin = this.playerModel.children[0].children[0]
 					this.playerTurret = this.playerModel.children[0].children[3]
+
 					this.playerModel.position.set(0, 0, 0)
+
 					// this.playerModel.rotation.set(0, 0, 0)
 					// this.playerModel.name = 'playerOne'
+
 					this.playerSkin.material.color.r = 1
 					this.playerSkin.material.color.g = 1
 					this.playerSkin.material.color.b = 1
@@ -268,13 +271,13 @@
 					const floor = new THREE.Mesh(floorGeometry, floorMaterial);
 					floor.castShadow = true;
 					floor.receiveShadow = true
-					// floor.rotation.x = -Math.PI / 2;
+
 					floor.position.y = -1;
 					scene.add(floor);
 					// ------------------------
 					// ADD MODELS
 					// ------------------------
-					_GLTFLoader.addModelsToScene(scene)
+					// _GLTFLoader.addModelsToScene(scene)
 					_Player.init()
 					_OrbitControls.init(camera, renderer, _Player)
 					renderer.render(scene, camera);
