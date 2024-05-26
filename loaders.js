@@ -2,15 +2,15 @@
 import * as THREE from "three";
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { BoxLineGeometry } from 'three/addons/geometries/BoxLineGeometry.js';
-let consoleOn = false
+let _consoleOn = false
 let _GLTFLoader = {
 	// ------------------------
 	// GLTFLoader for GLTF MESH
 	// ------------------------
 	root: undefined,
 	demoActive: false,
-	consoleOn: false,
-	callback: () => { if (this.consoleOn) console.log('no call back function for _GLTFLoader') },
+	_consoleOn: false,
+	callback: () => { if (this._consoleOn) console.log('no call back function for _GLTFLoader') },
 	gltfLoader: undefined,
 	models: {},
 	modelsActive: {},
@@ -63,7 +63,7 @@ let _GLTFLoader = {
 						}
 					});
 					this.models[element.name] = model
-					if (this.consoleOn) console.log('Model ' + element.name + ' loaded', model);
+					if (this._consoleOn) console.log('Model ' + element.name + ' loaded', model);
 					if (this.loadCounter === this.list.length) callbackFunction();
 				}, undefined, (error) => {
 					console.error('_GLTFLoader', error);
@@ -74,7 +74,7 @@ let _GLTFLoader = {
 }
 let _TextureLoader = {
 	root: undefined,
-	callback: () => { if (this.consoleOn) console.log('no call back function for _TextureLoader') },
+	callback: () => { if (this._consoleOn) console.log('no call back function for _TextureLoader') },
 	textures: {},
 	counter: 0,
 	textureLoader: new THREE.TextureLoader(),
@@ -101,7 +101,7 @@ let _TextureLoader = {
 			this.counter++;
 			map.name = file.name
 			this.textures[file.name] = { map: map, name: file.name }
-			if (this.consoleOn) console.log('texture loaded', file.fileName, this.counter + '/' + this.files.length)
+			if (this._consoleOn) console.log('texture loaded', file.fileName, this.counter + '/' + this.files.length)
 			this.checkEnd()
 		});
 	},
@@ -118,7 +118,7 @@ let _TextureLoader = {
 				// Progression du chargement de la texture (optionnel)
 				const percentLoaded = (xhr.loaded / xhr.total) * 100;
 				// this.texturesDivByName[file.name].style.width = (100 - percentLoaded) + '%'
-				if (this.consoleOn) console.log('Texture chargée :' + `${percentLoaded}% ${file.fileName} `);
+				if (this._consoleOn) console.log('Texture chargée :' + `${percentLoaded}% ${file.fileName} `);
 			},
 			(error) => {
 				console.error('Erreur de chargement de la texture :', error);
@@ -133,7 +133,7 @@ let _scene = {
 	set_scene: function () {
 		this.scene = new THREE.Scene();
 		this.scene.name = 'lv0';
-		if (consoleOn) console.log('0', this.scene)
+		if (_consoleOn) console.log('0', this.scene)
 	},
 	// ------------------------
 	// CAMERA
@@ -208,7 +208,7 @@ let _scene = {
 		}
 		this.SUN.starter = function () {
 			// this.animate()
-			if (consoleOn) console.log(this)
+			if (_consoleOn) console.log(this)
 			return this
 		}
 	},
@@ -242,10 +242,8 @@ let _scene = {
 		this.scene.add(cube, cube2, cube3, cube4);
 
 
-		// this.cubepitch = new THREE.Mesh(new THREE.BoxGeometry(5, 1, .1), new THREE.MeshPhongMaterial({ color: 0xFF0000 }));
-		// this.cubeyaw = new THREE.Mesh(new THREE.BoxGeometry(2, .2, 2), new THREE.MeshPhongMaterial({ color: 0x00FF00 }));
-		// this.cubepivot = new THREE.Mesh(new THREE.BoxGeometry(.05, .2, 3), new THREE.MeshPhongMaterial({ color: 0x0000ff }));
-		// this.scene.add(this.cubepivot, this.cubeyaw, this.cubepitch)
+		this.groupCamera = new THREE.Group()
+		// this.groupCamera = new THREE.Mesh(new THREE.BoxGeometry(5, 1, .1), new THREE.MeshPhongMaterial({ color: 0xFF0000 }));
 
 		// // const cube2 = cube.clone();
 		// const cube2Geometry = new THREE.BoxGeometry(.3, .3, .3);
@@ -268,4 +266,4 @@ let _scene = {
 		this.scene.add(this.SUN.starter());
 	}
 }
-export { _GLTFLoader, _TextureLoader, _scene }
+export { _GLTFLoader, _TextureLoader, _scene, _consoleOn }
