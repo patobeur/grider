@@ -16,10 +16,10 @@ let _GLTFLoader = {
 	modelsActive: {},
 	loadCounter: 0,
 	list: [
-		{ name: 'tank0', file: '/assets/gltf/tank/A/tank_black.gltf', position: { x: -2, y: 0, z: -4 } },
-		{ name: 'tank1', file: '/assets/gltf/tank/A/tank_white.gltf', position: { x: 0, y: 0, z: -4 } },
-		{ name: 'tank2', file: '/assets/gltf/tank/A/tank_red.gltf', position: { x: 2, y: 0, z: -4 } },
-		{ name: 'tank3', file: '/assets/gltf/tank/A/tank_green.gltf', position: { x: 4, y: 0, z: -4 } },
+		{ name: 'tank0', file: '/assets/gltf/tank/tank_black.gltf', position: { x: -2, y: 0, z: -4 } },
+		{ name: 'tank1', file: '/assets/gltf/tank/tank_white.gltf', position: { x: 0, y: 0, z: -4 } },
+		{ name: 'tank2', file: '/assets/gltf/tank/tank_red.gltf', position: { x: 2, y: 0, z: -4 } },
+		{ name: 'tank3', file: '/assets/gltf/tank/tank_green.gltf', position: { x: 4, y: 0, z: -4 } },
 	],
 	addModelsToScene: function (scene) {
 		for (const key in this.models) {
@@ -141,9 +141,8 @@ let _scene = {
 	set_camera: function () {
 		this.camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 1000);
 		this.camera.name = 'first'
-		// this.camera.position.z = 20;
-		// this.camera.position.y = 1;
-		// this.camera.lookAt(new THREE.Vector3(0, 0, 0))
+		this.camera2 = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 0.1, 1000);
+		this.camera2.name = 'secour'
 	},
 	// ------------------------
 	// RENDERER
@@ -243,10 +242,10 @@ let _scene = {
 		this.scene.add(cube, cube2, cube3, cube4);
 
 
-		this.cubepitch = new THREE.Mesh(new THREE.BoxGeometry(5, 1, .1), new THREE.MeshPhongMaterial({ color: 0xFF0000 }));
-		this.cubeyaw = new THREE.Mesh(new THREE.BoxGeometry(2, .2, 2), new THREE.MeshPhongMaterial({ color: 0x00FF00 }));
-		this.cubepivot = new THREE.Mesh(new THREE.BoxGeometry(.05, .2, 3), new THREE.MeshPhongMaterial({ color: 0x0000ff }));
-		this.scene.add(this.cubepivot, this.cubeyaw, this.cubepitch)
+		// this.cubepitch = new THREE.Mesh(new THREE.BoxGeometry(5, 1, .1), new THREE.MeshPhongMaterial({ color: 0xFF0000 }));
+		// this.cubeyaw = new THREE.Mesh(new THREE.BoxGeometry(2, .2, 2), new THREE.MeshPhongMaterial({ color: 0x00FF00 }));
+		// this.cubepivot = new THREE.Mesh(new THREE.BoxGeometry(.05, .2, 3), new THREE.MeshPhongMaterial({ color: 0x0000ff }));
+		// this.scene.add(this.cubepivot, this.cubeyaw, this.cubepitch)
 
 		// // const cube2 = cube.clone();
 		// const cube2Geometry = new THREE.BoxGeometry(.3, .3, .3);
