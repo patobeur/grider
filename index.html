@@ -48,9 +48,9 @@
 			"use strict";
 			import * as THREE from "three";
 			import { _GLTFLoader, _TextureLoader, _scene, _consoleOn } from '/loaders.js'
+			import { _physics } from '/physics.js';
 			// 
 			import { clone } from 'three/addons/utils/SkeletonUtils.js';
-
 
 			let _Player = {
 				// ------------------------
@@ -254,6 +254,7 @@
 					// if (_GLTFLoader.demoActive === true) _GLTFLoader.rotTankBase()
 
 					_Player.checkMoves()
+					// _physics.updatePhysicsWorld(deltaTime);
 
 					if (typeof _OrbitControls === 'object') _OrbitControls.update();
 
@@ -282,6 +283,8 @@
 					_OrbitControls.init(camera, renderer, _Player)
 					renderer.render(scene, camera);
 
+					_physics._initPhysicsWorld()
+					console.log('physics', (typeof _physics === 'object'))
 					animate();
 
 				}
