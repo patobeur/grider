@@ -48,7 +48,10 @@
 			Q D to rotate tank<br />
 			Z S to move forward and backward<br />
 			Mousemove to rotate turret<br />
-			Mousewheel to dolly in/out
+			Mousewheel to dolly in/out<br />
+			Space to shoot<br />
+			console : setcolor(0,0,0) for color1 (0 to 1)<br />
+			console : setcolor2(0,0,0) for color2 (0 to 1)<br />
 		</div>
 		<script src="/node_modules/three/examples/jsm/libs/ammo.wasm.js"></script>
 		<script type="importmap">
@@ -70,13 +73,13 @@
 			import { clone } from 'three/addons/utils/SkeletonUtils.js';
 			let userWindowsConsole = function () {
 				// Exemple de fonction pour manipuler le tank via la console
-				window.setColor = function (r = 0, g = 0, b = 0) {
+				window.setcolor = function (r = 0, g = 0, b = 0) {
 					let Skin = _player.playerTankMesh.children[0].children[0]
 					Skin.material.color.r = r
 					Skin.material.color.g = g
 					Skin.material.color.b = b
 				};
-				window.setColor2 = function (r = 0, g = 0, b = 0) {
+				window.setcolor2 = function (r = 0, g = 0, b = 0) {
 					let Skin = _player.playerTankMesh.children[0].children[3]
 					Skin.material.color.r = r
 					Skin.material.color.g = g
@@ -141,8 +144,6 @@
 					}
 					if (this.mooving === true) {
 						_physics.updatePlayerPhysics(this.playerTankMesh);
-					} else {
-						console.log('not updating tank Physics')
 					}
 
 				},
@@ -214,10 +215,6 @@
 					);
 				},
 				init: function () {
-					// -----------------------
-					// INIT SHOOTS
-					// -----------------------
-					_shoot.init(this.playerTankMesh, _scene, _physics)
 					// _GLTFLoader.addModelsToScene(scene)
 
 					this.playerTankMesh = clone(_GLTFLoader.models.tank1)
@@ -280,6 +277,11 @@
 				let STEP5 = () => {
 
 					_player.init()
+
+					// -----------------------
+					// INIT SHOOTS
+					// -----------------------
+					_shoot.init(_player.playerTankMesh, _scene, _physics)
 					// renderer.render(_scene.scene, camera);
 					_OrbitControls.init(camera, renderer, _player)
 					STEP6()

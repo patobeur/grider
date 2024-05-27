@@ -36,7 +36,7 @@ let _physics = {
 			if (motionState) {
 
 				if (this.infomax < this.rigidBody_List.length) {
-					console.log('G', Graphics_Obj); this.infomax++;
+					console.log('G', Graphics_Obj.name); this.infomax++;
 				}
 				motionState.getWorldTransform(this.tmpTransformation);
 				let new_pos = this.tmpTransformation.getOrigin();
@@ -123,7 +123,6 @@ let _physics = {
 
 		let motionState = physicsBody.getMotionState();
 		if (motionState) {
-			console.log(motionState)
 			let transform = new Ammo.btTransform();
 			motionState.getWorldTransform(transform);
 
