@@ -31,10 +31,25 @@
 				background-color: rgba(255, 255, 255, 1);
 				text-align: center;
 			}
+
+			#instructions {
+				color: white;
+				position: absolute;
+				right: 0;
+				padding: 1rem;
+				font-family: monospace;
+				background-color: rgba(0, 0, 0, 0.651);
+			}
 		</style>
 	</head>
 
 	<body>
+		<div id="instructions">
+			Q D to rotate tank<br />
+			Z S to move forward and backward<br />
+			Mousemove to rotate turret<br />
+			Mousewheel to dolly in/out
+		</div>
 		<script src="/node_modules/three/examples/jsm/libs/ammo.wasm.js"></script>
 		<script type="importmap">
 		{
@@ -47,21 +62,48 @@
 		<script type="module">
 			"use strict";
 			import * as THREE from "three";
-			import { _GLTFLoader, _TextureLoader, _scene, _consoleOn } from '/loaders.js'
-			import { _physics } from '/physics.js';
+			import { _GLTFLoader, _TextureLoader, _scene, _consoleOn, _formulas } from '/js/loaders.js'
+			import { _physics, _physicsHydrate } from '/js/physics.js';
+			import { _OrbitControls } from '/js/OrbitControls.js';
+			import { _shoot } from '/js/shoot.js';
 			// 
 			import { clone } from 'three/addons/utils/SkeletonUtils.js';
+			let userWindowsConsole = function () {
+				// Exemple de fonction pour manipuler le tank via la console
+				window.setColor = function (r = 0, g = 0, b = 0) {
+					let Skin = _player.playerTankMesh.children[0].children[0]
+					Skin.material.color.r = r
+					Skin.material.color.g = g
+					Skin.material.color.b = b
+				};
+				window.setColor2 = function (r = 0, g = 0, b = 0) {
+					let Skin = _player.playerTankMesh.children[0].children[3]
+					Skin.material.color.r = r
+					Skin.material.color.g = g
+					Skin.material.color.b = b
+				};
+				window.moveTankForward = function () {
+					_player.moveForward = true;
+					_player.moveBackward = false;
+				};
 
-			let _Player = {
-				// ------------------------
-				// PLAYER
-				// ------------------------
-				playerModel: undefined,
+				window.moveTankBackward = function () {
+					_player.moveForward = false;
+					_player.moveBackward = true;
+				};
+
+				window.stopTank = function () {
+					_player.moveForward = false;
+					_player.moveBackward = false;
+				};
+			}
+			let _player = {
+				playerTankMesh: undefined,
 				playerTurret: undefined,
-				playerTarget: undefined,
 				// ----------------
 				pointerLocked: true,
 				// ----------------
+				mooving: false,
 				moveForward: false,
 				moveBackward: false,
 				turnLeft: false,
@@ -78,54 +120,65 @@
 				},
 				checkMoves: function () {
 					this.directionMultiplier = this.moveBackward ? -1 : 1;
+					this.mooving = false
 
 					if (this.turnLeft) {
-						this.playerModel.rotation.y += 0.05 * this.directionMultiplier;
+						this.playerTankMesh.rotation.y += 0.05 * this.directionMultiplier;
+						this.mooving = true
 					} else if (this.turnRight) {
-						this.playerModel.rotation.y -= 0.05 * this.directionMultiplier;
+						this.playerTankMesh.rotation.y -= 0.05 * this.directionMultiplier;
+						this.mooving = true
 					}
 					if (this.moveBackward) {
-						this.playerModel.translateZ(-0.1);
+						this.mooving = true
+						this.playerTankMesh.translateZ(-0.1);
 					} else if (this.moveForward) {
-						this.playerModel.translateZ(0.1);
+						this.mooving = true
+						this.playerTankMesh.translateZ(0.1);
 					}
 					if (this.shoot) {
-						console.log('shoot', this.shoot)
+						_shoot.shoot('basic shoot')
 					}
+					if (this.mooving === true) {
+						_physics.updatePlayerPhysics(this.playerTankMesh);
+					} else {
+						console.log('not updating tank Physics')
+					}
+
 				},
 				onDocumentKey: function (e) {
-					console.log('e.code', e.code)
+					// console.log('e.code', e.code)
 					if (e.type === "keydown" || e.type === "keyup") {
-						_Player.keyMap[e.code] = e.type === "keydown";
+						_player.keyMap[e.code] = e.type === "keydown";
 					}
-					if (_Player.pointerLocked) {
-						_Player.moveForward = _Player.keyMap["KeyW"];
-						_Player.moveBackward = _Player.keyMap["KeyS"];
-						_Player.turnLeft = _Player.keyMap["KeyA"];
-						_Player.turnRight = _Player.keyMap["KeyD"];
-						_Player.shoot = _Player.keyMap["Space"] || _Player.keyMap["KeyQ"];;
+					if (_player.pointerLocked) {
+						_player.moveForward = _player.keyMap["KeyW"];
+						_player.moveBackward = _player.keyMap["KeyS"];
+						_player.turnLeft = _player.keyMap["KeyA"];
+						_player.turnRight = _player.keyMap["KeyD"];
+						_player.shoot = _player.keyMap["Space"] || _player.keyMap["KeyQ"];;
 					}
 				},
 				pointerManager: function () {
 					document.addEventListener("pointerlockchange", () => {
 						if (document.pointerLockElement === _scene.renderer.domElement) {
-							_Player.pointerLocked = true;
+							_player.pointerLocked = true;
 
-							_Player.startButton.style.display = "none";
-							_Player.menuPanel.style.display = "none";
+							_player.startButton.style.display = "none";
+							_player.menuPanel.style.display = "none";
 
-							document.addEventListener("keydown", _Player.onDocumentKey, false);
-							document.addEventListener("keyup", _Player.onDocumentKey, false);
+							document.addEventListener("keydown", _player.onDocumentKey, false);
+							document.addEventListener("keyup", _player.onDocumentKey, false);
 
 							_scene.renderer.domElement.addEventListener("mousemove", _OrbitControls.onDocumentMouseMove, false);
 							_scene.renderer.domElement.addEventListener("wheel", _OrbitControls.onDocumentMouseWheel, false);
 						} else {
-							_Player.pointerLocked = false;
+							_player.pointerLocked = false;
 
-							_Player.menuPanel.style.display = "block";
+							_player.menuPanel.style.display = "block";
 
-							document.removeEventListener("keydown", _Player.onDocumentKey, false);
-							document.removeEventListener("keyup", _Player.onDocumentKey, false);
+							document.removeEventListener("keydown", _player.onDocumentKey, false);
+							document.removeEventListener("keyup", _player.onDocumentKey, false);
 
 							_scene.renderer.domElement.removeEventListener(
 								"mousemove",
@@ -139,7 +192,7 @@
 							);
 
 							setTimeout(() => {
-								_Player.startButton.style.display = "block";
+								_player.startButton.style.display = "block";
 							}, 1000);
 						}
 					});
@@ -161,15 +214,17 @@
 					);
 				},
 				init: function () {
+					// -----------------------
+					// INIT SHOOTS
+					// -----------------------
+					_shoot.init(this.playerTankMesh, _scene, _physics)
 					// _GLTFLoader.addModelsToScene(scene)
-					this.playerModel = clone(_GLTFLoader.models.tank1)
-					this.playerSkin = this.playerModel.children[0].children[0]
-					this.playerTurret = this.playerModel.children[0].children[3]
 
-					this.playerModel.position.set(0, 0, 0)
+					this.playerTankMesh = clone(_GLTFLoader.models.tank1)
+					this.playerSkin = this.playerTankMesh.children[0].children[0]
+					this.playerTurret = this.playerTankMesh.children[0].children[3]
 
-					// this.playerModel.rotation.set(0, 0, 0)
-					// this.playerModel.name = 'playerOne'
+					this.playerTankMesh.position.set(0, .5, 0)
 
 					this.playerSkin.material.color.r = 1
 					this.playerSkin.material.color.g = 1
@@ -178,7 +233,7 @@
 					this.playerTurret.material.color.g = 1
 					this.playerTurret.material.color.b = 0
 
-					_scene.scene.add(this.playerModel)
+					_scene.scene.add(this.playerTankMesh)
 
 					this.panelManager()
 					this.pointerManager()
@@ -187,105 +242,56 @@
 				}
 
 			};
-			let _OrbitControls = {
-				active: false,
-				// ------------------------
-				// CAMERA PIVOTS 
-				// ------------------------
-				cubepitch: new THREE.Mesh(new THREE.BoxGeometry(.15, .05, .25), new THREE.MeshPhongMaterial({ color: 0xFF0000 })),
-				cubeyaw: new THREE.Mesh(new THREE.BoxGeometry(.05, .15, .25), new THREE.MeshPhongMaterial({ color: 0x00FF00 })),
-				cuberoll: new THREE.Mesh(new THREE.BoxGeometry(.05, .15, .25), new THREE.MeshPhongMaterial({ color: 0x0000ff })),
-				// ------------------------
-				// INIT
-				// ------------------------
-				init: function (camera, renderer, _Player) {
-					this.groupe = new THREE.Group()
-					this.groupe.position.y = 0
-					this.groupe.position.x = 0
-					this.groupe.position.z = -.75
-					this.cubeyaw.position.x = .25
-					this.cubepitch.position.x = -.25
-					this.groupe.add(this.cubeyaw, this.cubepitch, this.cuberoll)
-					_Player.playerTurret.add(this.groupe)
 
-					_Player.playerTurret.add(camera)
-					camera.position.z = -8;
-					camera.rotation.z = -Math.PI
-					camera.position.y = 2;
-					camera.lookAt(new THREE.Vector3(0, 0, 5))
-					this.active = true
-				},
-				update: function () {
-					if (this.active === true) {
-						// to do
-						_OrbitControls.cuberoll.rotation.y = _Player.playerModel.rotation.y + 0
-					}
-				},
-				//-----------------
-				onDocumentMouseMove: function (e) {
-					_OrbitControls.cubeyaw.rotation.y -= e.movementX * 0.002;
-					_OrbitControls.cubepitch.rotation.x += e.movementY * 0.002;
-					// _scene.camera.rotation.x =_OrbitControls.cubepitch.rotation.x;
-					_Player.playerTurret.rotation.y = _OrbitControls.cubeyaw.rotation.y;
-					return false;
-				},
-				onDocumentMouseWheel: function (e) {
-					const hauteur = _scene.camera.position.y + e.deltaY * 0.001;
-					console.log(hauteur)
-					if (hauteur >= 0 && hauteur <= 5) {
-						_scene.camera.position.y = hauteur;
-					}
-					return false;
-				}
-			}
 			let initWorld = (Ammo) => {
 				let root = '';
+				let delta = 0;
 				_scene.init()
+				let clock = new THREE.Clock()
 				let scene = _scene.scene
 				let camera = _scene.camera
 				let renderer = _scene.renderer
-				let cuberoll = _scene.cuberoll
+
 				// ------------------------
 				// ANIMATION
 				// ------------------------
 				const animate = function () {
+					delta = clock.getDelta()
 					requestAnimationFrame(animate);
 					_scene.SUN.move()
 					// if (_GLTFLoader.demoActive === true) _GLTFLoader.rotTankBase()
 
-					_Player.checkMoves()
-					// _physics.updatePhysicsWorld(deltaTime);
+					_player.checkMoves()
+
+
+					_physics.updateWorldPhysics(delta);
 
 					if (typeof _OrbitControls === 'object') _OrbitControls.update();
 
 					renderer.render(scene, camera);
 				};
+
 				// ------------------------
 				// STEPS
 				// ------------------------
+				let STEP6 = () => {
+					animate();
+				}
+				let STEP5 = () => {
+
+					_player.init()
+					// renderer.render(_scene.scene, camera);
+					_OrbitControls.init(camera, renderer, _player)
+					STEP6()
+				}
 				let STEP4 = () => {
 					// ------------------------
-					// FLOOR
+					// PHYSICS
 					// ------------------------
-					const floorGeometry = new THREE.BoxGeometry(192 / 3, 1, 197 / 3);
-					const floorMaterial = new THREE.MeshPhongMaterial({ color: 0xFFFFFF, map: _TextureLoader.textures['floor2'].map });
-					const floor = new THREE.Mesh(floorGeometry, floorMaterial);
-					floor.castShadow = true;
-					floor.receiveShadow = true
-
-					floor.position.y = -1;
-					scene.add(floor);
-					// ------------------------
-					// ADD MODELS
-					// ------------------------
-					// _GLTFLoader.addModelsToScene(scene)
-					_Player.init()
-					_OrbitControls.init(camera, renderer, _Player)
-					renderer.render(scene, camera);
-
 					_physics._initPhysicsWorld()
-					console.log('physics', (typeof _physics === 'object'))
-					animate();
+					_physicsHydrate.init(_scene)
+
+					STEP5()
 
 				}
 				let STEP3 = () => {
@@ -309,33 +315,7 @@
 				STEP()
 			}
 			Ammo().then(initWorld);
-			// Exemple de fonction pour manipuler le tank via la console
-			window.setColor = function (r = 0, g = 0, b = 0) {
-				let Skin = _Player.playerModel.children[0].children[0]
-				Skin.material.color.r = r
-				Skin.material.color.g = g
-				Skin.material.color.b = b
-			};
-			window.setColor2 = function (r = 0, g = 0, b = 0) {
-				let Skin = _Player.playerModel.children[0].children[3]
-				Skin.material.color.r = r
-				Skin.material.color.g = g
-				Skin.material.color.b = b
-			};
-			window.moveTankForward = function () {
-				_Player.moveForward = true;
-				_Player.moveBackward = false;
-			};
-
-			window.moveTankBackward = function () {
-				_Player.moveForward = false;
-				_Player.moveBackward = true;
-			};
-
-			window.stopTank = function () {
-				_Player.moveForward = false;
-				_Player.moveBackward = false;
-			};
+			userWindowsConsole()
 		</script>
 	</body>
 

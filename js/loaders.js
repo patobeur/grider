@@ -3,6 +3,9 @@ import * as THREE from "three";
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { BoxLineGeometry } from 'three/addons/geometries/BoxLineGeometry.js';
 let _consoleOn = false
+let _formulas = {
+	rand: (min, max) => { return Math.floor(Math.random() * (max - min + 1) + min) }
+}
 let _GLTFLoader = {
 	// ------------------------
 	// GLTFLoader for GLTF MESH
@@ -226,20 +229,6 @@ let _scene = {
 		this.scene.add(this.ambientLight);
 	},
 	set_messUp: function () {
-		const cubeGeometry = new THREE.BoxGeometry(1, 1, 1);
-		const cubeMaterial = new THREE.MeshStandardMaterial({ color: 0xEAEAEA });
-		const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
-		cube.position.set(-5, 0, 5);
-		cube.castShadow = true;
-		cube.receiveShadow = true
-		cube.rotation.y = -Math.PI / 4;
-		const cube2 = cube.clone()
-		const cube3 = cube.clone()
-		const cube4 = cube.clone()
-		cube2.position.set(-5, 0, -5);
-		cube3.position.set(5, 0, -5);
-		cube4.position.set(5, 0, 5);
-		this.scene.add(cube, cube2, cube3, cube4);
 
 
 		this.groupCamera = new THREE.Group()
@@ -266,4 +255,4 @@ let _scene = {
 		this.scene.add(this.SUN.starter());
 	}
 }
-export { _GLTFLoader, _TextureLoader, _scene, _consoleOn }
+export { _GLTFLoader, _TextureLoader, _scene, _consoleOn, _formulas }
