@@ -19,31 +19,27 @@ let _GLTFLoader = {
 	modelsActive: {},
 	loadCounter: 0,
 	list: [
-		{ name: 'tank0', file: '/assets/gltf/tank/tank_black.gltf', position: { x: -2, y: 0, z: -4 } },
-		{ name: 'tank1', file: '/assets/gltf/tank/tank_white.gltf', position: { x: 0, y: 0, z: -4 } },
-		{ name: 'tank2', file: '/assets/gltf/tank/tank_red.gltf', position: { x: 2, y: 0, z: -4 } },
-		{ name: 'tank3', file: '/assets/gltf/tank/tank_green.gltf', position: { x: 4, y: 0, z: -4 } },
+		{ name: 'tank0', file: '/assets/gltf/tank/tank_black.gltf', position: { x: -2, y: 0.5, z: -4 } },
+		{ name: 'tank1', file: '/assets/gltf/tank/tank_white.gltf', position: { x: 0, y: 0.5, z: -4 } },
+		{ name: 'tank2', file: '/assets/gltf/tank/tank_red.gltf', position: { x: 2, y: 0.5, z: -4 } },
+		{ name: 'tank3', file: '/assets/gltf/tank/tank_green.gltf', position: { x: 4, y: 0.5, z: -4 } },
 	],
 	addModelsToScene: function (scene) {
 		for (const key in this.models) {
 			scene.add(this.models[key]);
 		}
 		this.demoActive = true
-		// this.modelsActive['tank0'] = this.models['tank0'].clone()
-		// scene.add(this.modelsActive['tank0']);
-		// this.modelsActive['tank1'] = this.models['tank1'].clone()
-		// scene.add(this.modelsActive['tank1']);
-		// this.modelsActive['tank2'] = this.models['tank2'].clone()
-		// scene.add(this.modelsActive['tank2']);
 	},
 	rotTankBase: function (name = 'tank2') {
-		this.models.tank0.children[0].children[3].rotation.y += 0.01
-		this.models.tank0.children[0].rotation.y -= 0.01
+		if (this.demoActive = true) {
+			this.models.tank0.children[0].children[3].rotation.y += 0.01
+			this.models.tank0.children[0].rotation.y -= 0.01
 
-		this.models.tank2.children[0].children[3].rotation.y += 0.01
-		this.models.tank2.children[0].rotation.y += 0.009
+			this.models.tank2.children[0].children[3].rotation.y += 0.01
+			this.models.tank2.children[0].rotation.y += 0.009
 
-		this.models.tank1.children[0].children[3].rotation.y -= 0.01
+			this.models.tank1.children[0].children[3].rotation.y -= 0.01
+		}
 	},
 	init: function (root = '', callbackFunction = this.callback) {
 		this.root = root
@@ -167,7 +163,7 @@ let _scene = {
 	// ------------------------
 	set_decoration: function () {
 		this.room = new THREE.LineSegments(
-			new BoxLineGeometry(100, 100, 100, 20, 20, 20),
+			new BoxLineGeometry(38, 38, 38, 20, 20, 20),
 			new THREE.LineBasicMaterial({ color: 0xbcbcbc })
 		);
 		this.scene.add(this.room);
@@ -228,28 +224,12 @@ let _scene = {
 		this.ambientLight = new THREE.AmbientLight(0xFFFFFF, 1); // soft white light
 		this.scene.add(this.ambientLight);
 	},
-	set_messUp: function () {
-
-
-		this.groupCamera = new THREE.Group()
-		// this.groupCamera = new THREE.Mesh(new THREE.BoxGeometry(5, 1, .1), new THREE.MeshPhongMaterial({ color: 0xFF0000 }));
-
-		// // const cube2 = cube.clone();
-		// const cube2Geometry = new THREE.BoxGeometry(.3, .3, .3);
-		// const cube2 = new THREE.Mesh(cube2Geometry, cubeMaterial);
-		// cube2.castShadow = true;
-		// cube2.receiveShadow = true
-		// cube2.position.y = 1.7;
-		// scene.add(cube, cube2);
-	},
-	set_4: function () { },
 	init: function () {
 		this.set_scene()
 		this.set_camera()
 		this.set_renderer()
 		this.set_decoration()
 		this.set_sun()
-		this.set_messUp()
 		this.set_lights()
 
 		this.scene.add(this.SUN.starter());

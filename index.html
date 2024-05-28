@@ -5,42 +5,7 @@
 		<title>three.js physics</title>
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-		<style>
-			body {
-				overflow: hidden;
-				margin: 0px;
-			}
-
-			#menuPanel {
-				position: absolute;
-				background-color: rgba(255, 255, 255, 0.25);
-				top: 0px;
-				left: 0px;
-				width: 100%;
-				height: 100%;
-			}
-
-			#startButton {
-				height: 50px;
-				width: 200px;
-				/* margin: -25px -100px; */
-				position: relative;
-				/* top: 50%;
-				left: 50%; */
-				font-size: 32px;
-				background-color: rgba(255, 255, 255, 1);
-				text-align: center;
-			}
-
-			#instructions {
-				color: white;
-				position: absolute;
-				right: 0;
-				padding: 1rem;
-				font-family: monospace;
-				background-color: rgba(0, 0, 0, 0.651);
-			}
-		</style>
+		<link rel="stylesheet" href="/assets/css/main.css">
 	</head>
 
 	<body>
@@ -49,9 +14,10 @@
 			Z S to move forward and backward<br />
 			Mousemove to rotate turret<br />
 			Mousewheel to dolly in/out<br />
-			Space to shoot<br />
+			Spacebar : change ammo model.<br />
+			Left mouse clic to fire an ammo !<br />
 			console : setcolor(0,0,0) for color1 (0 to 1)<br />
-			console : setcolor2(0,0,0) for color2 (0 to 1)<br />
+			console : setcolor2(0,0,0) for color2 (0 to 1)
 		</div>
 		<script src="/node_modules/three/examples/jsm/libs/ammo.wasm.js"></script>
 		<script type="importmap">
@@ -66,179 +32,42 @@
 			"use strict";
 			import * as THREE from "three";
 			import { _GLTFLoader, _TextureLoader, _scene, _consoleOn, _formulas } from '/js/loaders.js'
-			import { _physics, _physicsHydrate } from '/js/physics.js';
 			import { _OrbitControls } from '/js/OrbitControls.js';
+			import { _physics } from '/js/physics.js';
+			import { _sphereBleue } from '/js/sphereBleue.js';
 			import { _shoot } from '/js/shoot.js';
-			// 
+			import { _player } from '/js/player.js';
+			import { _userConsole } from '/js/userConsole.js';
 			import { clone } from 'three/addons/utils/SkeletonUtils.js';
-			let userWindowsConsole = function () {
-				// Exemple de fonction pour manipuler le tank via la console
-				window.setcolor = function (r = 0, g = 0, b = 0) {
-					let Skin = _player.playerTankMesh.children[0].children[0]
-					Skin.material.color.r = r
-					Skin.material.color.g = g
-					Skin.material.color.b = b
-				};
-				window.setcolor2 = function (r = 0, g = 0, b = 0) {
-					let Skin = _player.playerTankMesh.children[0].children[3]
-					Skin.material.color.r = r
-					Skin.material.color.g = g
-					Skin.material.color.b = b
-				};
-				window.moveTankForward = function () {
-					_player.moveForward = true;
-					_player.moveBackward = false;
-				};
+			// let userConsole = function () {
+			// 	// Exemple de fonction pour manipuler le tank via la console
+			// 	window.setcolor = function (r = 0, g = 0, b = 0) {
+			// 		let Skin = _player.playerTankMesh.children[0].children[0]
+			// 		Skin.material.color.r = r
+			// 		Skin.material.color.g = g
+			// 		Skin.material.color.b = b
+			// 	};
+			// 	window.setcolor2 = function (r = 0, g = 0, b = 0) {
+			// 		let Skin = _player.playerTankMesh.children[0].children[3]
+			// 		Skin.material.color.r = r
+			// 		Skin.material.color.g = g
+			// 		Skin.material.color.b = b
+			// 	};
+			// 	window.moveTankForward = function () {
+			// 		_player.moveForward = true;
+			// 		_player.moveBackward = false;
+			// 	};
 
-				window.moveTankBackward = function () {
-					_player.moveForward = false;
-					_player.moveBackward = true;
-				};
+			// 	window.moveTankBackward = function () {
+			// 		_player.moveForward = false;
+			// 		_player.moveBackward = true;
+			// 	};
 
-				window.stopTank = function () {
-					_player.moveForward = false;
-					_player.moveBackward = false;
-				};
-			}
-			let _player = {
-				playerTankMesh: undefined,
-				playerTurret: undefined,
-				// ----------------
-				pointerLocked: true,
-				// ----------------
-				mooving: false,
-				moveForward: false,
-				moveBackward: false,
-				turnLeft: false,
-				turnRight: false,
-				shoot: false,
-				isReversing: false,
-				keyMap: {
-					KeyW: false,
-					KeyS: false,
-					KeyA: false,
-					KeyD: false,
-					Space: false,
-					KeyQ: false,
-				},
-				checkMoves: function () {
-					this.directionMultiplier = this.moveBackward ? -1 : 1;
-					this.mooving = false
-
-					if (this.turnLeft) {
-						this.playerTankMesh.rotation.y += 0.05 * this.directionMultiplier;
-						this.mooving = true
-					} else if (this.turnRight) {
-						this.playerTankMesh.rotation.y -= 0.05 * this.directionMultiplier;
-						this.mooving = true
-					}
-					if (this.moveBackward) {
-						this.mooving = true
-						this.playerTankMesh.translateZ(-0.1);
-					} else if (this.moveForward) {
-						this.mooving = true
-						this.playerTankMesh.translateZ(0.1);
-					}
-					if (this.shoot) {
-						_shoot.shoot('basic shoot')
-					}
-					if (this.mooving === true) {
-						_physics.updatePlayerPhysics(this.playerTankMesh);
-					}
-
-				},
-				onDocumentKey: function (e) {
-					// console.log('e.code', e.code)
-					if (e.type === "keydown" || e.type === "keyup") {
-						_player.keyMap[e.code] = e.type === "keydown";
-					}
-					if (_player.pointerLocked) {
-						_player.moveForward = _player.keyMap["KeyW"];
-						_player.moveBackward = _player.keyMap["KeyS"];
-						_player.turnLeft = _player.keyMap["KeyA"];
-						_player.turnRight = _player.keyMap["KeyD"];
-						_player.shoot = _player.keyMap["Space"] || _player.keyMap["KeyQ"];;
-					}
-				},
-				pointerManager: function () {
-					document.addEventListener("pointerlockchange", () => {
-						if (document.pointerLockElement === _scene.renderer.domElement) {
-							_player.pointerLocked = true;
-
-							_player.startButton.style.display = "none";
-							_player.menuPanel.style.display = "none";
-
-							document.addEventListener("keydown", _player.onDocumentKey, false);
-							document.addEventListener("keyup", _player.onDocumentKey, false);
-
-							_scene.renderer.domElement.addEventListener("mousemove", _OrbitControls.onDocumentMouseMove, false);
-							_scene.renderer.domElement.addEventListener("wheel", _OrbitControls.onDocumentMouseWheel, false);
-						} else {
-							_player.pointerLocked = false;
-
-							_player.menuPanel.style.display = "block";
-
-							document.removeEventListener("keydown", _player.onDocumentKey, false);
-							document.removeEventListener("keyup", _player.onDocumentKey, false);
-
-							_scene.renderer.domElement.removeEventListener(
-								"mousemove",
-								_OrbitControls.onDocumentMouseMove,
-								false
-							);
-							_scene.renderer.domElement.removeEventListener(
-								"wheel",
-								_OrbitControls.onDocumentMouseWheel,
-								false
-							);
-
-							setTimeout(() => {
-								_player.startButton.style.display = "block";
-							}, 1000);
-						}
-					});
-				},
-				panelManager: function () {
-					this.menuPanel = document.createElement('div')
-					this.startButton = document.createElement('div')
-					this.menuPanel.id = 'menuPanel'
-					this.startButton.id = 'startButton'
-					this.startButton.textContent = 'startButton'
-					this.menuPanel.appendChild(this.startButton)
-					document.body.appendChild(this.menuPanel)
-					this.startButton.addEventListener(
-						"click",
-						() => {
-							_scene.renderer.domElement.requestPointerLock();
-						},
-						false
-					);
-				},
-				init: function () {
-					// _GLTFLoader.addModelsToScene(scene)
-
-					this.playerTankMesh = clone(_GLTFLoader.models.tank1)
-					this.playerSkin = this.playerTankMesh.children[0].children[0]
-					this.playerTurret = this.playerTankMesh.children[0].children[3]
-
-					this.playerTankMesh.position.set(0, .5, 0)
-
-					this.playerSkin.material.color.r = 1
-					this.playerSkin.material.color.g = 1
-					this.playerSkin.material.color.b = 1
-					this.playerTurret.material.color.r = 1
-					this.playerTurret.material.color.g = 1
-					this.playerTurret.material.color.b = 0
-
-					_scene.scene.add(this.playerTankMesh)
-
-					this.panelManager()
-					this.pointerManager()
-					// orbitControls.set_cameraPivot()
-
-				}
-
-			};
+			// 	window.stopTank = function () {
+			// 		_player.moveForward = false;
+			// 		_player.moveBackward = false;
+			// 	};
+			// }
 
 			let initWorld = (Ammo) => {
 				let root = '';
@@ -255,11 +84,14 @@
 				const animate = function () {
 					delta = clock.getDelta()
 					requestAnimationFrame(animate);
+
 					_scene.SUN.move()
-					// if (_GLTFLoader.demoActive === true) _GLTFLoader.rotTankBase()
 
-					_player.checkMoves()
+					if (_GLTFLoader.demoActive === true) _GLTFLoader.rotTankBase()
 
+					_player.checkMoves(delta)// verifier si le tank bouge
+
+					_shoot.update(); // verifier si des projectiles doivent disparaitre...
 
 					_physics.updateWorldPhysics(delta);
 
@@ -268,42 +100,26 @@
 					renderer.render(scene, camera);
 				};
 
-				// ------------------------
-				// STEPS
-				// ------------------------
-				let STEP6 = () => {
+
+				let starter = () => {
+					_physics._initPhysicsWorld()
+					_physics.addThemAll(_scene)
+					_player.init(_physics)
+					_shoot.init(_player.playerTankMesh, _scene, _physics)
+
+
+					_sphereBleue.init(_player, _physics, _scene);
+					_sphereBleue.addRandomSphere(_scene)
+
+					renderer.render(_scene.scene, camera);
+					_OrbitControls.init(camera, renderer, _player)
+
 					animate();
 				}
-				let STEP5 = () => {
-
-					_player.init()
-
-					// -----------------------
-					// INIT SHOOTS
-					// -----------------------
-					_shoot.init(_player.playerTankMesh, _scene, _physics)
-					// renderer.render(_scene.scene, camera);
-					_OrbitControls.init(camera, renderer, _player)
-					STEP6()
-				}
-				let STEP4 = () => {
-					// ------------------------
-					// PHYSICS
-					// ------------------------
-					_physics._initPhysicsWorld()
-					_physicsHydrate.init(_scene)
-
-					STEP5()
-
-				}
-				let STEP3 = () => {
-					STEP4()
-				}
-				let STEP2 = () => {
-					_TextureLoader.init(root, STEP3)
-				}
-				let STEP = () => {
-					_GLTFLoader.init(root, STEP2)
+				const loadAssets = () => {
+					_GLTFLoader.init(root, () => {
+						_TextureLoader.init(root, starter)
+					})
 				}
 				// ------------------------
 				// Handle window resizing
@@ -313,11 +129,10 @@
 					camera.aspect = window.innerWidth / window.innerHeight;
 					camera.updateProjectionMatrix();
 				});
-
-				STEP()
+				loadAssets()
 			}
 			Ammo().then(initWorld);
-			userWindowsConsole()
+			_userConsole()
 		</script>
 	</body>
 
